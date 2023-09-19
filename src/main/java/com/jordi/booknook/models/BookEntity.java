@@ -1,13 +1,13 @@
 package com.jordi.booknook.models;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.Id;
+import jakarta.persistence.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.HashSet;
+import java.util.Set;
 
 
 @Entity
@@ -15,6 +15,15 @@ public class BookEntity {
     @Id
     @GeneratedValue
     private Long book_id;
+
+    @ManyToMany
+    @JoinTable(
+            name = "book_category",
+            joinColumns = @JoinColumn(name = "book_id"),
+            inverseJoinColumns = @JoinColumn(name = "category_id")
+    )
+    private Set<CategoryEntity> categories = new HashSet<>();
+
     private String cover;
     private String title;
     private String description;
@@ -92,4 +101,23 @@ public class BookEntity {
     public void setUpdated_at(LocalDateTime updated_at) {
         this.updated_at = updated_at;
     }
+
+    public Set<CategoryEntity> getCategories() {
+        return categories;
+    }
+
+    public void setCategories(Set<CategoryEntity> categories) {
+        this.categories = categories;
+    }
+
+    public void addCategories(CategoryEntity category){
+        categories.add(category);
+        category.getBooks().add(this);
+    }
+
+    public void removeCategories(CategoryEntity category){
+        categories.remove(category);
+        category.getBooks().remove(this);
+    }
+    
 }
