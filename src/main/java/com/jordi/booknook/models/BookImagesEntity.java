@@ -7,6 +7,7 @@ import org.hibernate.annotations.UpdateTimestamp;
 import java.time.LocalDateTime;
 
 @Entity
+@Table(name = "book_images")
 public class BookImagesEntity {
     @Id
     @GeneratedValue

@@ -1,5 +1,8 @@
 package com.jordi.booknook.models;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import jakarta.persistence.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
@@ -13,6 +16,8 @@ import java.util.Set;
 
 
 @Entity
+@Table(name = "books")
+@JsonPropertyOrder({"book_id", "title", "description", "cover", "categories", "images", "price", "created_at", "updated_at"})
 public class BookEntity {
     @Id
     @GeneratedValue
@@ -28,6 +33,8 @@ public class BookEntity {
 
     @OneToMany(cascade = CascadeType.REMOVE, orphanRemoval = true)
     @JoinColumn(name = "book_id")
+    @JsonIgnoreProperties("book") // Ignores serialization of images property on book
+    @JsonProperty("images") // Gives it a custom name
     private List<BookImagesEntity> images = new ArrayList<>();
 
     private String cover;
