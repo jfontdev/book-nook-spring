@@ -6,7 +6,9 @@ import org.hibernate.annotations.UpdateTimestamp;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 
@@ -23,6 +25,10 @@ public class BookEntity {
             inverseJoinColumns = @JoinColumn(name = "category_id")
     )
     private Set<CategoryEntity> categories = new HashSet<>();
+
+    @OneToMany(cascade = CascadeType.REMOVE, orphanRemoval = true)
+    @JoinColumn(name = "book_id")
+    private List<BookImagesEntity> images = new ArrayList<>();
 
     private String cover;
     private String title;
@@ -110,6 +116,14 @@ public class BookEntity {
         this.categories = categories;
     }
 
+    public List<BookImagesEntity> getImages() {
+        return images;
+    }
+
+    public void setImages(List<BookImagesEntity> images) {
+        this.images = images;
+    }
+
     public void addCategories(CategoryEntity category){
         categories.add(category);
         category.getBooks().add(this);
@@ -119,5 +133,14 @@ public class BookEntity {
         categories.remove(category);
         category.getBooks().remove(this);
     }
-    
+
+    public void addImage(BookImagesEntity image){
+        images.add(image);
+        image.setBook(this);
+    }
+
+    public void removeImage(BookImagesEntity image){
+        images.remove(image);
+        image.setBook(null);
+    }
 }
