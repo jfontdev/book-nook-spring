@@ -56,7 +56,8 @@ public class BookEntity {
         this.updated_at = updated_at;
     }
 
-    protected BookEntity() {
+    public BookEntity() {
+        this(null,null,null,null,null,null);
     }
 
     public Long getBook_id() {
