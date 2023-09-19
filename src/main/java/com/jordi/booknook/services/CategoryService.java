@@ -1,7 +1,7 @@
 package com.jordi.booknook.services;
 
 import com.jordi.booknook.models.CategoryEntity;
-import com.jordi.booknook.models.CategoryRepository;
+import com.jordi.booknook.repositories.CategoryRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.List;

@@ -1,7 +1,8 @@
 package com.jordi.booknook.services;
 
 import com.jordi.booknook.models.BookEntity;
-import com.jordi.booknook.models.BookRepository;
+
+import com.jordi.booknook.repositories.BookRepository;
 import com.jordi.booknook.models.UniversalSearch;
 import org.springframework.data.domain.Example;
 import org.springframework.data.domain.ExampleMatcher;
