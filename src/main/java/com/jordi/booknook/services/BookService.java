@@ -1,7 +1,7 @@
 package com.jordi.booknook.services;
 
 import com.jordi.booknook.models.BookEntity;
-import com.jordi.booknook.models.BookRepository;
+import com.jordi.booknook.repositories.BookRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
