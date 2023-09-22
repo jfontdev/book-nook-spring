@@ -7,6 +7,7 @@ import com.jordi.booknook.repositories.BookRepository;
 import com.jordi.booknook.repositories.BookReviewRepository;
 import org.springframework.stereotype.Service;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -27,7 +28,7 @@ public class BookReviewService {
             List<BookReviewEntity> reviews = bookReviewRepository.findBookReviewEntitiesByBook(book.get());
             return new ReviewsByBookResponse(book.get(),reviews);
         }else{
-            return null;
+            return new ReviewsByBookResponse(null, Collections.emptyList());
         }
     }
 
