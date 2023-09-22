@@ -1,6 +1,7 @@
 package com.jordi.booknook.controllers;
 
 import com.jordi.booknook.payload.response.ReviewsByBookResponse;
+import com.jordi.booknook.payload.response.ReviewsByUserResponse;
 import com.jordi.booknook.services.BookReviewService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -21,6 +22,13 @@ public class BookReviewController {
     @GetMapping("/{book_id}/get")
     public ResponseEntity<ReviewsByBookResponse> getReviewsByBook (@PathVariable Long book_id){
         ReviewsByBookResponse response = bookReviewService.getReviewsByBook(book_id);
+
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/get")
+    public ResponseEntity<ReviewsByUserResponse> getReviewsByUser (){
+        ReviewsByUserResponse response = bookReviewService.getReviewsByUser();
 
         return ResponseEntity.ok(response);
     }
