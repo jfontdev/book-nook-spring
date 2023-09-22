@@ -1,5 +1,6 @@
 package com.jordi.booknook.models;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
@@ -21,10 +22,12 @@ public class BookReviewEntity {
 
     @ManyToOne
     @JoinColumn(name = "book_id")
+    @JsonIgnore
     private BookEntity book;
 
     @ManyToOne
     @JoinColumn(name = "user_id")
+    @JsonIgnore
     private UserEntity user;
 
     @Min(1)
