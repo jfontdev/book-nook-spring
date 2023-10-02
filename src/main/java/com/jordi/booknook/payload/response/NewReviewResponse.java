@@ -1,4 +1,4 @@
-package com.jordi.booknook.payload.request;
+package com.jordi.booknook.payload.response;
 
 
 public record NewReviewResponse(

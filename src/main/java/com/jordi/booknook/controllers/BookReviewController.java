@@ -1,11 +1,15 @@
 package com.jordi.booknook.controllers;
 
 import com.jordi.booknook.payload.request.NewReviewRequest;
-import com.jordi.booknook.payload.request.NewReviewResponse;
+import com.jordi.booknook.payload.request.UpdateReviewRequest;
+import com.jordi.booknook.payload.response.NewReviewResponse;
 import com.jordi.booknook.payload.response.ReviewsByBookResponse;
 import com.jordi.booknook.payload.response.ReviewsByUserResponse;
+import com.jordi.booknook.payload.response.UpdateReviewResponse;
 import com.jordi.booknook.services.BookReviewService;
+import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.Valid;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -40,4 +44,17 @@ public class BookReviewController {
         return ResponseEntity.ok(response);
     }
 
+    @PatchMapping("/{book_reviews_id}")
+    public ResponseEntity<UpdateReviewResponse> updateReviewById(@PathVariable Long book_reviews_id,
+                                                                 @Valid @RequestBody UpdateReviewRequest updatedReview){
+        UpdateReviewResponse response = bookReviewService.updateReviewById(book_reviews_id,updatedReview);
+
+        return ResponseEntity.ok(response);
+    }
+
+    // TODO: Abstract Error handling to a general Error handler.
+    @ExceptionHandler(EntityNotFoundException.class)
+    public ResponseEntity<String> handleEntityNotFoundException(EntityNotFoundException ex) {
+        return new ResponseEntity<>("Review not found", HttpStatus.NOT_FOUND);
+    }
 }
