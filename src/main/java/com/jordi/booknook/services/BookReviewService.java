@@ -4,13 +4,16 @@ import com.jordi.booknook.models.BookEntity;
 import com.jordi.booknook.models.BookReviewEntity;
 import com.jordi.booknook.models.UserEntity;
 import com.jordi.booknook.payload.request.NewReviewRequest;
-import com.jordi.booknook.payload.request.NewReviewResponse;
+import com.jordi.booknook.payload.request.UpdateReviewRequest;
+import com.jordi.booknook.payload.response.NewReviewResponse;
 import com.jordi.booknook.payload.response.ReviewsByBookResponse;
 import com.jordi.booknook.payload.response.ReviewsByUserResponse;
+import com.jordi.booknook.payload.response.UpdateReviewResponse;
 import com.jordi.booknook.repositories.BookRepository;
 import com.jordi.booknook.repositories.BookReviewRepository;
 import com.jordi.booknook.repositories.UserRepository;
 import com.jordi.booknook.security.UserDetailsImplementation;
+import jakarta.persistence.EntityNotFoundException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -70,6 +73,32 @@ public class BookReviewService {
         } else {
             // Todo: Improve error handling
             return new NewReviewResponse(null,null,null,null, null);
+        }
+    }
+
+    public UpdateReviewResponse updateReviewById(Long book_reviews_id, UpdateReviewRequest updatedReview){
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        UserDetailsImplementation userDetails = (UserDetailsImplementation) auth.getPrincipal();
+
+        Optional<UserEntity> authenticatedUser = userRepository.findByUsername(userDetails.getUsername());
+        Optional<BookReviewEntity> review = bookReviewRepository.findById(book_reviews_id);
+
+        if (authenticatedUser.isPresent() && review.isPresent()) {
+            BookReviewEntity updatedBookReview = review.get();
+            updatedBookReview.setRating(updatedReview.rating());
+            updatedBookReview.setReview(updatedReview.review());
+
+            bookReviewRepository.save(updatedBookReview);
+
+            return new UpdateReviewResponse(
+                    updatedBookReview.getBook_reviews_id(),
+                    updatedBookReview.getBook().getBook_id(),
+                    updatedBookReview.getBook().getTitle(),
+                    updatedBookReview.getRating(),
+                    updatedBookReview.getReview()
+            );
+        }else {
+            throw new EntityNotFoundException("Review not found");
         }
     }
 }
