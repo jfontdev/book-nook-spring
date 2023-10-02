@@ -3,6 +3,7 @@ package com.jordi.booknook.models;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.UpdateTimestamp;
@@ -27,7 +28,7 @@ public class ShelfEntity {
     )
     private Set<BookEntity> books = new HashSet<>();
 
-    @ManyToOne
+    @ManyToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "user_id")
     @JsonIgnore
     private UserEntity user;
@@ -42,7 +43,7 @@ public class ShelfEntity {
     @NotBlank
     private String description;
 
-    @NotBlank
+    @NotNull
     private Boolean public_shelf;
 
     @CreationTimestamp

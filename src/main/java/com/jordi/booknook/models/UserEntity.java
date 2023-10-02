@@ -1,6 +1,7 @@
 package com.jordi.booknook.models;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.jordi.booknook.events.UserEntityListener;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -10,6 +11,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 @Entity
+@EntityListeners(UserEntityListener.class)
 @Table(name = "users")
 public class UserEntity {
     @Id
