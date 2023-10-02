@@ -4,7 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.UpdateTimestamp;
@@ -32,7 +32,7 @@ public class BookReviewEntity {
 
     @Min(1)
     @Max(5)
-    @NotBlank
+    @NotNull
     private Integer rating;
 
     @JdbcTypeCode(SqlTypes.LONGVARCHAR)
@@ -47,21 +47,17 @@ public class BookReviewEntity {
     public BookReviewEntity() {
     }
 
-    public BookReviewEntity(BookEntity book, UserEntity user, Integer rating, LocalDateTime created_at, LocalDateTime updated_at) {
+    public BookReviewEntity(BookEntity book, UserEntity user, Integer rating) {
         this.book = book;
         this.user = user;
         this.rating = rating;
-        this.created_at = created_at;
-        this.updated_at = updated_at;
     }
 
-    public BookReviewEntity(BookEntity book, UserEntity user, Integer rating, String review, LocalDateTime created_at, LocalDateTime updated_at) {
+    public BookReviewEntity(BookEntity book, UserEntity user, Integer rating, String review) {
         this.book = book;
         this.user = user;
         this.rating = rating;
         this.review = review;
-        this.created_at = created_at;
-        this.updated_at = updated_at;
     }
 
     public Long getBook_reviews_id() {

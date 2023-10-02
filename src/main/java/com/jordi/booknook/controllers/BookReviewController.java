@@ -1,13 +1,13 @@
 package com.jordi.booknook.controllers;
 
+import com.jordi.booknook.payload.request.NewReviewRequest;
+import com.jordi.booknook.payload.request.NewReviewResponse;
 import com.jordi.booknook.payload.response.ReviewsByBookResponse;
 import com.jordi.booknook.payload.response.ReviewsByUserResponse;
 import com.jordi.booknook.services.BookReviewService;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 
 @RestController
@@ -32,4 +32,12 @@ public class BookReviewController {
 
         return ResponseEntity.ok(response);
     }
+
+    @PostMapping("")
+    public ResponseEntity<NewReviewResponse> addReviewByUser(@Valid @RequestBody NewReviewRequest newReview){
+        NewReviewResponse response = bookReviewService.addReviewByUser(newReview);
+
+        return ResponseEntity.ok(response);
+    }
+
 }
