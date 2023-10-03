@@ -3,10 +3,13 @@ package com.jordi.booknook.services;
 import com.jordi.booknook.models.ShelfEntity;
 import com.jordi.booknook.models.UserEntity;
 import com.jordi.booknook.payload.request.NewShelfRequest;
+import com.jordi.booknook.payload.request.UpdateShelfRequest;
 import com.jordi.booknook.payload.response.NewShelfResponse;
+import com.jordi.booknook.payload.response.UpdateShelfResponse;
 import com.jordi.booknook.repositories.ShelfRepository;
 import com.jordi.booknook.repositories.UserRepository;
 import com.jordi.booknook.security.UserDetailsImplementation;
+import jakarta.persistence.EntityNotFoundException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -38,6 +41,33 @@ public class ShelfService {
                     newShelf.getPublic_shelf());
         } else {
             return new NewShelfResponse(null,null,null,null,null,null);
+        }
+    }
+
+    public UpdateShelfResponse updateShelfById(Long shelf_id, UpdateShelfRequest request){
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        UserDetailsImplementation userDetails = (UserDetailsImplementation) auth.getPrincipal();
+
+        Optional<UserEntity> authenticatedUser = userRepository.findByUsername(userDetails.getUsername());
+        Optional<ShelfEntity> shelf = shelfRepository.findById(shelf_id);
+
+        if (authenticatedUser.isPresent() && shelf.isPresent()) {
+            ShelfEntity updatedShelf = shelf.get();
+            updatedShelf.setName(request.name());
+            updatedShelf.setImage(request.image());
+            updatedShelf.setDescription(request.description());
+            updatedShelf.setPublic_shelf(request.public_shelf());
+
+            shelfRepository.save(updatedShelf);
+
+            return new UpdateShelfResponse(authenticatedUser.get().getUsername(),
+                    updatedShelf.getShelf_id(),
+                    updatedShelf.getName(),
+                    updatedShelf.getImage(),
+                    updatedShelf.getDescription(),
+                    updatedShelf.getPublic_shelf());
+        } else {
+            throw new EntityNotFoundException("Shelf Not found.");
         }
     }
 }
