@@ -1,7 +1,9 @@
 package com.jordi.booknook.controllers;
 
+import com.jordi.booknook.payload.request.AddBookToShelfRequest;
 import com.jordi.booknook.payload.request.NewShelfRequest;
 import com.jordi.booknook.payload.request.UpdateShelfRequest;
+import com.jordi.booknook.payload.response.AddBookToShelfResponse;
 import com.jordi.booknook.payload.response.NewShelfResponse;
 import com.jordi.booknook.payload.response.UpdateShelfResponse;
 import com.jordi.booknook.services.ShelfService;
@@ -9,6 +11,7 @@ import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -35,10 +38,22 @@ public class ShelfController {
         return ResponseEntity.ok(response);
     }
 
+    @PostMapping("/add-book")
+    public ResponseEntity<AddBookToShelfResponse> addBookToShelf(@Valid @RequestBody AddBookToShelfRequest request){
+        AddBookToShelfResponse response = shelfService.addBookToShelf(request);
+
+        return ResponseEntity.ok(response);
+    }
+
 
     // TODO: Abstract Error handling to a general Error handler.
     @ExceptionHandler(EntityNotFoundException.class)
-    public ResponseEntity<String> handleEntityNotFoundException(EntityNotFoundException ex) {
-        return new ResponseEntity<>("Shelf Not Found.", HttpStatus.NOT_FOUND);
+    public ResponseEntity<String> handleEntityNotFoundException(EntityNotFoundException exception) {
+        return new ResponseEntity<>(exception.getMessage(), HttpStatus.NOT_FOUND);
+    }
+
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<String> handleEntityNotFoundException(AccessDeniedException exception) {
+        return new ResponseEntity<>(exception.getMessage(), HttpStatus.FORBIDDEN);
     }
 }
