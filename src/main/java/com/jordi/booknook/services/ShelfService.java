@@ -133,4 +133,13 @@ public class ShelfService {
 
         return shelf.get();
     }
+
+    public List<ShelfEntity> getAllUserPrivateShelves(){
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        UserDetailsImplementation userDetails = (UserDetailsImplementation) auth.getPrincipal();
+
+        Optional<UserEntity> authenticatedUser = userRepository.findByUsername(userDetails.getUsername());
+
+        return shelfRepository.findAllByUserAndPublicShelfIsFalse(authenticatedUser.orElseThrow());
+    }
 }
