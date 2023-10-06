@@ -1,5 +1,6 @@
 package com.jordi.booknook.controllers;
 
+import com.jordi.booknook.models.ShelfEntity;
 import com.jordi.booknook.payload.request.AddBookToShelfRequest;
 import com.jordi.booknook.payload.request.NewShelfRequest;
 import com.jordi.booknook.payload.request.UpdateShelfRequest;
@@ -13,6 +14,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("api/v1/shelves")
@@ -43,6 +46,11 @@ public class ShelfController {
         AddBookToShelfResponse response = shelfService.addBookToShelf(request);
 
         return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/get")
+    public List<ShelfEntity> getShelvesByUser(){
+        return shelfService.getAllUserShelves();
     }
 
 
