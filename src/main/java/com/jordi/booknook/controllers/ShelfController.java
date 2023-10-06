@@ -58,6 +58,11 @@ public class ShelfController {
         return shelfService.getOneUserShelf(shelves_id);
     }
 
+    @GetMapping("/private")
+    public List<ShelfEntity> getPrivateShelvesByUser(){
+        return shelfService.getAllUserPrivateShelves();
+    }
+
 
     // TODO: Abstract Error handling to a general Error handler.
     @ExceptionHandler(EntityNotFoundException.class)
