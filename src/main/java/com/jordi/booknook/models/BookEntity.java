@@ -1,5 +1,6 @@
 package com.jordi.booknook.models;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
@@ -37,13 +38,21 @@ public class BookEntity {
     @JsonProperty("images") // Gives it a custom name
     private List<BookImagesEntity> images = new ArrayList<>();
 
+    // TODO: Find a better way to make use of the relationship.
+    @OneToMany(mappedBy = "book")
+    private List<BookReviewEntity> reviews;
+
     private String cover;
     private String title;
     private String description;
     private BigDecimal price;
+
     @CreationTimestamp
+    @JsonIgnore
     private LocalDateTime created_at;
+
     @UpdateTimestamp
+    @JsonIgnore
     private LocalDateTime updated_at;
 
     public BookEntity(String cover, String title, String description, BigDecimal price, LocalDateTime created_at, LocalDateTime updated_at) {
@@ -150,5 +159,19 @@ public class BookEntity {
     public void removeImage(BookImagesEntity image){
         images.remove(image);
         image.setBook(null);
+    }
+
+    public double getAverageRating(){
+        if (reviews == null || reviews.isEmpty()){
+            return 0.0;
+        }
+
+        double sum = 0.0;
+        for (BookReviewEntity review : reviews){
+            sum += review.getRating();
+        }
+
+        double average = sum / reviews.size();
+        return Math.round(average * 10.0) / 10.0;
     }
 }
