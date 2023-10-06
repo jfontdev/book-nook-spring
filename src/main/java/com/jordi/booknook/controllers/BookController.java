@@ -3,6 +3,7 @@ package com.jordi.booknook.controllers;
 
 import com.jordi.booknook.models.BookEntity;
 import com.jordi.booknook.models.UniversalSearch;
+import com.jordi.booknook.payload.request.SortRequest;
 import com.jordi.booknook.services.BookService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -34,5 +35,10 @@ public class BookController {
     @PostMapping("/search")
     public List<BookEntity> searchBooks(@RequestBody UniversalSearch search){
         return bookService.search(search);
+    }
+
+    @PostMapping("/sorted")
+    public List<BookEntity> sortedBooks(@RequestBody SortRequest sortRequest){
+        return bookService.getAllBooksSortedByPriceOrReview(sortRequest);
     }
 }
