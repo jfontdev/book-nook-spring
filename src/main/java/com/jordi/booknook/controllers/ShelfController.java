@@ -53,6 +53,11 @@ public class ShelfController {
         return shelfService.getAllUserShelves();
     }
 
+    @GetMapping("/{shelves_id}/show")
+    public ShelfEntity getShelfByUserAndShelfId(@PathVariable Long shelves_id){
+        return shelfService.getOneUserShelf(shelves_id);
+    }
+
 
     // TODO: Abstract Error handling to a general Error handler.
     @ExceptionHandler(EntityNotFoundException.class)
