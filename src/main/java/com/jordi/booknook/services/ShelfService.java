@@ -16,9 +16,11 @@ import com.jordi.booknook.security.UserDetailsImplementation;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -106,5 +108,14 @@ public class ShelfService {
         shelfRepository.save(updatedShelf);
 
         return new AddBookToShelfResponse(lastBook,updatedShelf);
+    }
+
+    public List<ShelfEntity> getAllUserShelves() throws AuthenticationException{
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        UserDetailsImplementation userDetails = (UserDetailsImplementation) auth.getPrincipal();
+
+        Optional<UserEntity> authenticatedUser = userRepository.findByUsername(userDetails.getUsername());
+
+        return shelfRepository.findAllByUser(authenticatedUser.orElseThrow());
     }
 }
