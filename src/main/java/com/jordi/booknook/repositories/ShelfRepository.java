@@ -17,4 +17,8 @@ public interface ShelfRepository extends JpaRepository<ShelfEntity, Long> {
 
     @Query("SELECT shelves from ShelfEntity shelves WHERE shelves.user = :user AND shelves.public_shelf = false")
     List<ShelfEntity> findAllByUserAndPublicShelfIsFalse(@Param("user") UserEntity user);
+
+    @Query("SELECT shelves from ShelfEntity shelves WHERE shelves.user = :user AND shelves.public_shelf = true")
+    List<ShelfEntity> findAllByUserAndPublicShelfIsTrue(@Param("user") UserEntity user);
+
 }

@@ -142,4 +142,10 @@ public class ShelfService {
 
         return shelfRepository.findAllByUserAndPublicShelfIsFalse(authenticatedUser.orElseThrow());
     }
+
+    public List<ShelfEntity> getAllUserPublicShelves(Long user_id){
+        Optional<UserEntity> user = userRepository.findById(user_id);
+
+        return shelfRepository.findAllByUserAndPublicShelfIsTrue(user.orElseThrow());
+    }
 }
