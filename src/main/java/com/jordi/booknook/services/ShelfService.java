@@ -118,4 +118,19 @@ public class ShelfService {
 
         return shelfRepository.findAllByUser(authenticatedUser.orElseThrow());
     }
+
+    public ShelfEntity getOneUserShelf(Long shelves_id){
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        UserDetailsImplementation userDetails = (UserDetailsImplementation) auth.getPrincipal();
+
+        Optional<UserEntity> authenticatedUser = userRepository.findByUsername(userDetails.getUsername());
+        Optional<ShelfEntity> shelf = shelfRepository.findOneByUserAndShelfId(authenticatedUser.orElseThrow(),
+                shelves_id);
+
+        if (shelf.isEmpty()){
+            throw new EntityNotFoundException("Shelf Not Found.");
+        }
+
+        return shelf.get();
+    }
 }
