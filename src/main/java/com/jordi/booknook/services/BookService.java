@@ -2,6 +2,7 @@ package com.jordi.booknook.services;
 
 import com.jordi.booknook.models.BookEntity;
 
+import com.jordi.booknook.payload.request.SortRequest;
 import com.jordi.booknook.repositories.BookRepository;
 import com.jordi.booknook.models.UniversalSearch;
 import org.springframework.data.domain.Example;
@@ -44,5 +45,11 @@ public class BookService {
                 .withStringMatcher(ExampleMatcher.StringMatcher.CONTAINING));
 
         return bookRepository.findAll(example);
+    }
+
+    public List<BookEntity> getAllBooksSortedByPriceOrReview(SortRequest sortRequest){
+        String sortBy = sortRequest.sortBy();
+
+        return bookRepository.findAllSorted(sortBy);
     }
 }
