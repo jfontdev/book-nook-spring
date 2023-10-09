@@ -14,11 +14,11 @@ import com.jordi.booknook.repositories.BookReviewRepository;
 import com.jordi.booknook.repositories.UserRepository;
 import com.jordi.booknook.security.UserDetailsImplementation;
 import jakarta.persistence.EntityNotFoundException;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -37,12 +37,13 @@ public class BookReviewService {
     public ReviewsByBookResponse getReviewsByBook(Long book_id) {
         Optional<BookEntity> book = bookRepository.findById(book_id);
 
-        if (book.isPresent()) {
-            List<BookReviewEntity> reviews = bookReviewRepository.findBookReviewEntitiesByBook(book.get());
-            return new ReviewsByBookResponse(book.get(), reviews);
-        } else {
-            return new ReviewsByBookResponse(null, Collections.emptyList());
+        if (book.isEmpty()){
+            throw new EntityNotFoundException("Book not found.");
         }
+
+        List<BookReviewEntity> reviews = bookReviewRepository.findBookReviewEntitiesByBook(book.get());
+
+        return new ReviewsByBookResponse(book.get(), reviews);
     }
 
     public ReviewsByUserResponse getReviewsByUser() {
@@ -51,12 +52,8 @@ public class BookReviewService {
 
         Optional<UserEntity> authenticatedUser = userRepository.findByUsername(userDetails.getUsername());
 
-        if (authenticatedUser.isPresent()) {
-            List<BookReviewEntity> reviews = bookReviewRepository.findBookReviewEntitiesByUser(authenticatedUser.get());
-            return new ReviewsByUserResponse(reviews);
-        } else {
-            return new ReviewsByUserResponse(Collections.emptyList());
-        }
+        List<BookReviewEntity> reviews = bookReviewRepository.findBookReviewEntitiesByUser(authenticatedUser.get());
+        return new ReviewsByUserResponse(reviews);
     }
 
     public NewReviewResponse addReviewByUser(NewReviewRequest newReview) {
@@ -66,14 +63,14 @@ public class BookReviewService {
         Optional<UserEntity> authenticatedUser = userRepository.findByUsername(userDetails.getUsername());
         Optional<BookEntity> book = bookRepository.findById(newReview.book_id());
 
-        if (authenticatedUser.isPresent() && book.isPresent()) {
-            BookReviewEntity newBookReview = bookReviewRepository.saveAndFlush(
-                    new BookReviewEntity(book.get(), authenticatedUser.get(), newReview.rating(), newReview.review()));
-            return new NewReviewResponse(newBookReview.getBook_reviews_id(),newBookReview.getBook().getBook_id(),newBookReview.getBook().getTitle(), newBookReview.getRating(), newBookReview.getReview());
-        } else {
-            // Todo: Improve error handling
-            return new NewReviewResponse(null,null,null,null, null);
+        if (book.isEmpty()) {
+            throw new EntityNotFoundException("Book not found.");
         }
+
+        BookReviewEntity newBookReview = bookReviewRepository.saveAndFlush(
+                new BookReviewEntity(book.get(), authenticatedUser.get(), newReview.rating(), newReview.review()));
+
+        return new NewReviewResponse(newBookReview.getBook_reviews_id(),newBookReview.getBook().getBook_id(),newBookReview.getBook().getTitle(), newBookReview.getRating(), newBookReview.getReview());
     }
 
     public UpdateReviewResponse updateReviewById(Long book_reviews_id, UpdateReviewRequest updatedReview){
@@ -83,22 +80,27 @@ public class BookReviewService {
         Optional<UserEntity> authenticatedUser = userRepository.findByUsername(userDetails.getUsername());
         Optional<BookReviewEntity> review = bookReviewRepository.findById(book_reviews_id);
 
-        if (authenticatedUser.isPresent() && review.isPresent()) {
-            BookReviewEntity updatedBookReview = review.get();
-            updatedBookReview.setRating(updatedReview.rating());
-            updatedBookReview.setReview(updatedReview.review());
-
-            bookReviewRepository.save(updatedBookReview);
-
-            return new UpdateReviewResponse(
-                    updatedBookReview.getBook_reviews_id(),
-                    updatedBookReview.getBook().getBook_id(),
-                    updatedBookReview.getBook().getTitle(),
-                    updatedBookReview.getRating(),
-                    updatedBookReview.getReview()
-            );
-        }else {
-            throw new EntityNotFoundException("Review not found");
+        if (review.isEmpty()){
+            throw new EntityNotFoundException("Review not found.");
         }
+
+        BookReviewEntity updatedBookReview = review.get();
+
+        if (updatedBookReview.getUser() != authenticatedUser.get()){
+            throw new AccessDeniedException("Not allowed to update that Book review.");
+        }
+
+        updatedBookReview.setRating(updatedReview.rating());
+        updatedBookReview.setReview(updatedReview.review());
+
+        bookReviewRepository.save(updatedBookReview);
+
+        return new UpdateReviewResponse(
+                updatedBookReview.getBook_reviews_id(),
+                updatedBookReview.getBook().getBook_id(),
+                updatedBookReview.getBook().getTitle(),
+                updatedBookReview.getRating(),
+                updatedBookReview.getReview()
+            );
     }
 }
