@@ -11,6 +11,7 @@ import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.annotation.*;
 
 
@@ -54,7 +55,12 @@ public class BookReviewController {
 
     // TODO: Abstract Error handling to a general Error handler.
     @ExceptionHandler(EntityNotFoundException.class)
-    public ResponseEntity<String> handleEntityNotFoundException(EntityNotFoundException ex) {
-        return new ResponseEntity<>("Review not found", HttpStatus.NOT_FOUND);
+    public ResponseEntity<String> handleEntityNotFoundException(EntityNotFoundException exception) {
+        return new ResponseEntity<>(exception.getMessage(), HttpStatus.NOT_FOUND);
+    }
+
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<String> handleDeniedAccessException(AccessDeniedException exception) {
+        return new ResponseEntity<>(exception.getMessage(), HttpStatus.FORBIDDEN);
     }
 }
