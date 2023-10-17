@@ -5,6 +5,9 @@ import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 
 public record UpdateReviewRequest(
-        @NotNull @Min(1) @Max(5) Integer rating,
-                                  String review) {
+        @Min(value = 1, message = "Minimum value is 1.")
+        @Max(value = 5, message = "Must be less than or equal to 5.")
+        Integer rating,
+        String review
+) {
 }
