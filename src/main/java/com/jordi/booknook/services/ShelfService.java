@@ -62,10 +62,19 @@ public class ShelfService {
         }
 
         ShelfEntity updatedShelf = shelf.get();
-        updatedShelf.setName(request.name());
-        updatedShelf.setImage(request.image());
-        updatedShelf.setDescription(request.description());
-        updatedShelf.setPublic_shelf(request.public_shelf());
+
+        if (request.name() != null){
+            updatedShelf.setName(request.name());
+        }
+        if (request.image() != null){
+            updatedShelf.setImage(request.image());
+        }
+        if (request.description() != null){
+            updatedShelf.setDescription(request.description());
+        }
+        if (request.public_shelf() != null){
+            updatedShelf.setPublic_shelf(request.public_shelf());
+        }
 
         shelfRepository.save(updatedShelf);
 
