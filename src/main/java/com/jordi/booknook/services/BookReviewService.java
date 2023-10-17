@@ -73,7 +73,7 @@ public class BookReviewService {
         return new NewReviewResponse(newBookReview.getBook_reviews_id(),newBookReview.getBook().getBook_id(),newBookReview.getBook().getTitle(), newBookReview.getRating(), newBookReview.getReview());
     }
 
-    public UpdateReviewResponse updateReviewById(Long book_reviews_id, UpdateReviewRequest updatedReview){
+    public UpdateReviewResponse updateReviewById(Long book_reviews_id, UpdateReviewRequest request){
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         UserDetailsImplementation userDetails = (UserDetailsImplementation) auth.getPrincipal();
 
@@ -90,8 +90,12 @@ public class BookReviewService {
             throw new AccessDeniedException("Not allowed to update that Book review.");
         }
 
-        updatedBookReview.setRating(updatedReview.rating());
-        updatedBookReview.setReview(updatedReview.review());
+        if (request.rating() != null){
+            updatedBookReview.setRating(request.rating());
+        }
+        if (request.rating() != null){
+            updatedBookReview.setReview(request.review());
+        }
 
         bookReviewRepository.save(updatedBookReview);
 
