@@ -10,6 +10,8 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @ControllerAdvice
 public class ValidationExceptionHandler {
@@ -32,13 +34,38 @@ public class ValidationExceptionHandler {
     @ExceptionHandler(HttpMessageConversionException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ResponseBody
-    public Map<String, String> handleConversionException() {
+    public Map<String, String> handleConversionException(HttpMessageConversionException exception) {
         Map<String, String> errors = new HashMap<>();
 
-        String message = "Please provide a valid Boolean (true or false)";
+        String errorMessage = String.valueOf(exception.getCause());
+        String field = extractFieldValue(errorMessage);
 
-        errors.put("public_shelf", message);
+        if (exception.getMessage().contains("Boolean")) {
+            String message = "Please provide a valid Boolean (true or false).";
+            errors.put(field, message);
+        }
+
+        if (exception.getMessage().contains("Long")){
+            String message = "Please provide a valid id.";
+            errors.put(field, message);
+        }
+
+        if (exception.getMessage().contains("Integer")) {
+            String message = "Please provide a valid number.";
+            errors.put(field, message);
+        }
 
         return errors;
+    }
+
+    public static String extractFieldValue(String errorMessage) {
+        Pattern pattern = Pattern.compile("\\[\"(\\w+)\"]");
+        Matcher matcher = pattern.matcher(errorMessage);
+
+       if (!matcher.find()){
+        return "unknown_field";
+       }
+
+       return matcher.group(1);
     }
 }
