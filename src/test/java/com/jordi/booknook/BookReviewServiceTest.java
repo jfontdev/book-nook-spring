@@ -3,6 +3,8 @@ package com.jordi.booknook;
 import com.jordi.booknook.models.BookEntity;
 import com.jordi.booknook.models.BookReviewEntity;
 import com.jordi.booknook.models.UserEntity;
+import com.jordi.booknook.payload.request.NewReviewRequest;
+import com.jordi.booknook.payload.response.NewReviewResponse;
 import com.jordi.booknook.repositories.BookRepository;
 import com.jordi.booknook.repositories.BookReviewRepository;
 import com.jordi.booknook.repositories.UserRepository;
@@ -27,6 +29,7 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -124,4 +127,69 @@ public class BookReviewServiceTest {
         // Then: We assert that we get the exact 2 reviews that the current user has assigned.
         assertThat(reviews).containsExactly(review1,review2);
     }
+
+    @Test
+    void addReviewByUserShouldAddTheReviewsAndShouldReturn(){
+        // Given: A request with a valid book and a review by a logged user.
+        NewReviewRequest request = new NewReviewRequest(book1.getBook_id(), 3,"Not bad.");
+
+        when(bookRepository.findById(book1.getBook_id())).thenReturn(Optional.of(book1));
+
+        when(auth.getPrincipal())
+                .thenReturn(userDetails);
+        when(userDetails.getUsername())
+                .thenReturn(user1.getUsername());
+        when(userRepository.findByUsername(user1.getUsername()))
+                .thenReturn(Optional.of(user1));
+
+        SecurityContextHolder.getContext().setAuthentication(auth);
+
+        BookReviewEntity review1 = new BookReviewEntity(book1,user1,request.rating(),request.review());
+        review1.setBook_reviews_id(1L);
+
+        when(reviewRepository.saveAndFlush(any(BookReviewEntity.class))).thenReturn(review1);
+
+        // When: We call the addReviewByUser with the valid request and the mocked new review1.
+        NewReviewResponse response = service.addReviewByUser(request);
+
+
+       // Then: We assert that the response we get back is the same as the expectedResponse.
+        NewReviewResponse expectedResponse = new NewReviewResponse(
+                review1.getBook_reviews_id(),
+                review1.getBook().getBook_id(),
+                review1.getBook().getTitle(),
+                review1.getRating(),
+                review1.getReview());
+
+       assertThat(response).isEqualTo(expectedResponse);
+    }
+
+    @Test
+    void addReviewByUserShouldReturnErrorWhenNoBookIsFound(){
+        // Given: A bad request with a non-existent book with a logged user.
+        Long nonExistentId = 3L;
+
+        NewReviewRequest noBookReviewRequest = new NewReviewRequest(nonExistentId,4,"Great");
+
+        when(auth.getPrincipal())
+                .thenReturn(userDetails);
+        when(userDetails.getUsername())
+                .thenReturn(user1.getUsername());
+        when(userRepository.findByUsername(user1.getUsername()))
+                .thenReturn(Optional.of(user1));
+
+        SecurityContextHolder.getContext().setAuthentication(auth);
+
+        // When: The service method addReviewsByUser is called with the bad request.
+        Executable action = () -> service.addReviewByUser(noBookReviewRequest);
+
+        // Then: We assert that it throws a EntityNotFoundException.
+        EntityNotFoundException exception = assertThrows(EntityNotFoundException.class,
+                action);
+
+        // And: That the error message thrown by the exception is equal to the expected error message.
+        String expectedErrorMessage = "Book not found.";
+        assertEquals(expectedErrorMessage ,exception.getMessage());
+    }
+
 }
