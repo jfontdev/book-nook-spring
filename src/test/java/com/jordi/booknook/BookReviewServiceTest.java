@@ -1,12 +1,12 @@
 package com.jordi.booknook;
 
-
 import com.jordi.booknook.models.BookEntity;
 import com.jordi.booknook.models.BookReviewEntity;
 import com.jordi.booknook.models.UserEntity;
 import com.jordi.booknook.repositories.BookRepository;
 import com.jordi.booknook.repositories.BookReviewRepository;
 import com.jordi.booknook.repositories.UserRepository;
+import com.jordi.booknook.security.UserDetailsImplementation;
 import com.jordi.booknook.services.BookReviewService;
 import jakarta.persistence.EntityNotFoundException;
 import org.junit.jupiter.api.BeforeAll;
@@ -16,6 +16,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.function.Executable;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -39,6 +41,10 @@ public class BookReviewServiceTest {
     BookRepository bookRepository;
     @Mock
     UserRepository userRepository;
+    @Mock
+    Authentication auth;
+    @Mock
+    UserDetailsImplementation userDetails;
 
     @BeforeAll
     static void setUpCommonEntities() {
@@ -92,5 +98,30 @@ public class BookReviewServiceTest {
         // And: That the error message thrown by the exception is equal to the expected error message.
         String expectedErrorMessage = "Book not found.";
         assertEquals(expectedErrorMessage ,exception.getMessage());
+    }
+
+    @Test
+    void getReviewsByUserShouldReturnTheCurrentUserReviews(){
+        // Given: A logged user "jordi" with 2 assigned reviews.
+        when(auth.getPrincipal())
+                .thenReturn(userDetails);
+        when(userDetails.getUsername())
+                .thenReturn(user1.getUsername());
+        when(userRepository.findByUsername(user1.getUsername()))
+                .thenReturn(Optional.of(user1));
+
+        SecurityContextHolder.getContext().setAuthentication(auth);
+
+        BookReviewEntity review1 = new BookReviewEntity(book1,user1,5);
+        BookReviewEntity review2 = new BookReviewEntity(book1,user1,2);
+
+        when(reviewRepository.findBookReviewEntitiesByUser(user1))
+                .thenReturn(List.of(review1,review2));
+
+        // When: The getReviewsByUser method is called with the current logged user.
+        List<BookReviewEntity> reviews = service.getReviewsByUser().reviews();
+
+        // Then: We assert that we get the exact 2 reviews that the current user has assigned.
+        assertThat(reviews).containsExactly(review1,review2);
     }
 }
