@@ -4,7 +4,9 @@ import com.jordi.booknook.models.BookEntity;
 import com.jordi.booknook.models.BookReviewEntity;
 import com.jordi.booknook.models.UserEntity;
 import com.jordi.booknook.payload.request.NewReviewRequest;
+import com.jordi.booknook.payload.request.UpdateReviewRequest;
 import com.jordi.booknook.payload.response.NewReviewResponse;
+import com.jordi.booknook.payload.response.UpdateReviewResponse;
 import com.jordi.booknook.repositories.BookRepository;
 import com.jordi.booknook.repositories.BookReviewRepository;
 import com.jordi.booknook.repositories.UserRepository;
@@ -18,6 +20,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.function.Executable;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 
@@ -37,6 +40,7 @@ public class BookReviewServiceTest {
     BookReviewService service;
     static UserEntity user1;
     static BookEntity book1;
+    static BookReviewEntity review;
 
     @Mock
     BookReviewRepository reviewRepository;
@@ -60,6 +64,9 @@ public class BookReviewServiceTest {
         book1 = new BookEntity("cover1", "title1", "description1",
                 price, date, date);
         book1.setBook_id(1L);
+
+        review = new BookReviewEntity(book1, user1,5,"El mejor libro de la historia.");
+        review.setBook_reviews_id(2L);
     }
 
     @BeforeEach
@@ -192,4 +199,205 @@ public class BookReviewServiceTest {
         assertEquals(expectedErrorMessage ,exception.getMessage());
     }
 
+    @Test
+    void updateReviewShouldUpdateTheReviewAndShouldReturn() {
+        // Given: A request with a valid review that has both rating and review by the owner of that review.
+        when(auth.getPrincipal())
+                .thenReturn(userDetails);
+        when(userDetails.getUsername())
+                .thenReturn(user1.getUsername());
+        when(userRepository.findByUsername(user1.getUsername()))
+                .thenReturn(Optional.of(user1));
+
+        SecurityContextHolder.getContext().setAuthentication(auth);
+
+        when(reviewRepository.findById(2L))
+                .thenReturn(Optional.of(review));
+
+        UpdateReviewRequest request = new UpdateReviewRequest(3, "No esta mal.");
+        review.setRating(request.rating());
+        review.setReview(request.review());
+
+        when(reviewRepository.save(review))
+                .thenReturn(review);
+
+        // When: We call the updateReviewById with a valid review id and a valid request.
+        UpdateReviewResponse response = service.updateReviewById(
+                review.getBook_reviews_id(),
+                request);
+
+        // Then: We assert that the response we get back is the same as the expectedResponse.
+        UpdateReviewResponse expectedResponse = new UpdateReviewResponse(
+                review.getBook_reviews_id(),
+                review.getBook().getBook_id(),
+                review.getBook().getTitle(),
+                review.getRating(),
+                review.getReview());
+
+        assertThat(response).isEqualTo(expectedResponse);
+    }
+
+    @Test
+    void updateReviewShouldReturnErrorWhenReviewIsNotFound(){
+        // Given: A bad request with an invalid review id and a logged user.
+        Long nonExistentId = 3L;
+
+        UpdateReviewRequest request = new UpdateReviewRequest(3, "No esta mal.");
+
+        when(auth.getPrincipal())
+                .thenReturn(userDetails);
+        when(userDetails.getUsername())
+                .thenReturn(user1.getUsername());
+        when(userRepository.findByUsername(user1.getUsername()))
+                .thenReturn(Optional.of(user1));
+
+        SecurityContextHolder.getContext().setAuthentication(auth);
+
+        // When: We call the updateReviewById with an invalid review id and a valid request.
+        Executable action = () -> service.updateReviewById(nonExistentId, request);
+
+        // Then: We assert that it throws a EntityNotFoundException.
+        EntityNotFoundException exception = assertThrows(EntityNotFoundException.class,
+                action);
+
+        // And: That the error message thrown by the exception is equal to the expected error message.
+        String expectedErrorMessage = "Review not found.";
+        assertEquals(expectedErrorMessage ,exception.getMessage());
+    }
+
+    @Test
+    void updateReviewShouldReturnErrorWhenUserIsNotAllowed() {
+        // Given: A valid request with a valid review but with a user that doesn't own that review.
+        UpdateReviewRequest request = new UpdateReviewRequest(3, "No esta mal.");
+
+        UserEntity nonAllowedUser = new UserEntity(
+                "Tamara", "tamara@gmail.com", "asdasda");
+
+        when(reviewRepository.findById(2L))
+                .thenReturn(Optional.of(review));
+
+        when(auth.getPrincipal())
+                .thenReturn(userDetails);
+        when(userDetails.getUsername())
+                .thenReturn(nonAllowedUser.getUsername());
+        when(userRepository.findByUsername(nonAllowedUser.getUsername()))
+                .thenReturn(Optional.of(nonAllowedUser));
+
+        SecurityContextHolder.getContext().setAuthentication(auth);
+
+        /* When: We call the updateReviewById with a valid review id and a valid request,
+           but a user that doesn't own that review.
+         */
+        Executable action = () -> service.updateReviewById(review.getBook_reviews_id(), request);
+
+        // Then: We assert that it throws a AccessDeniedException.
+        AccessDeniedException exception = assertThrows(AccessDeniedException.class,
+                action);
+
+        // And: That the error message thrown by the exception is equal to the expected error message.
+        String expectedErrorMessage = "Not allowed to update that Book review.";
+        assertEquals(expectedErrorMessage ,exception.getMessage());
+    }
+
+    @Test
+    void updateReviewShouldUpdateTheReviewWithOnlyARatingAndShouldReturn() {
+        // Given: A request with a valid review that has only a rating by the owner of that review.
+        when(auth.getPrincipal())
+                .thenReturn(userDetails);
+        when(userDetails.getUsername())
+                .thenReturn(user1.getUsername());
+        when(userRepository.findByUsername(user1.getUsername()))
+                .thenReturn(Optional.of(user1));
+
+        SecurityContextHolder.getContext().setAuthentication(auth);
+
+        when(reviewRepository.findById(2L))
+                .thenReturn(Optional.of(review));
+
+        UpdateReviewRequest request = new UpdateReviewRequest(4, null);
+
+
+        when(reviewRepository.save(review))
+                .thenReturn(review);
+
+        BookReviewEntity initialReview = new BookReviewEntity(
+                review.getBook(),
+                review.getUser(),
+                review.getRating(),
+                review.getReview()
+        );
+
+        BookReviewEntity updatedBookReview = review;
+        updatedBookReview.setRating(request.rating());
+
+        // When: We call the updateReviewById with a valid review id and a valid request with only a rating.
+        UpdateReviewResponse response = service.updateReviewById(
+                updatedBookReview.getBook_reviews_id(),
+                request);
+
+        // Then: We assert that the response we get back is the same as the expectedResponse.
+        UpdateReviewResponse expectedResponse = new UpdateReviewResponse(
+                updatedBookReview.getBook_reviews_id(),
+                updatedBookReview.getBook().getBook_id(),
+                updatedBookReview.getBook().getTitle(),
+                updatedBookReview.getRating(),
+                updatedBookReview.getReview());
+
+        assertThat(response).isEqualTo(expectedResponse);
+
+        // And: That the review text has not changed comparing the initialReview with the updated one.
+        assertThat(response.review()).isEqualTo(initialReview.getReview());
+    }
+
+    @Test
+    void updateReviewShouldUpdateTheReviewWithOnlyAReviewTextAndShouldReturn() {
+        // Given: A request with a valid review that has only a review text by the owner of that review.
+        when(auth.getPrincipal())
+                .thenReturn(userDetails);
+        when(userDetails.getUsername())
+                .thenReturn(user1.getUsername());
+        when(userRepository.findByUsername(user1.getUsername()))
+                .thenReturn(Optional.of(user1));
+
+        SecurityContextHolder.getContext().setAuthentication(auth);
+
+        when(reviewRepository.findById(2L))
+                .thenReturn(Optional.of(review));
+
+        UpdateReviewRequest request = new UpdateReviewRequest(null, "No esta mal.");
+
+
+        when(reviewRepository.save(review))
+                .thenReturn(review);
+
+        BookReviewEntity initialReview = new BookReviewEntity(
+                review.getBook(),
+                review.getUser(),
+                review.getRating(),
+                review.getReview()
+        );
+
+        BookReviewEntity updatedBookReview = review;
+        updatedBookReview.setReview(request.review());
+
+        /* When: We call the updateReviewById with a valid review id and a valid request
+                 with only a review text.
+         */
+        UpdateReviewResponse response = service.updateReviewById(
+                updatedBookReview.getBook_reviews_id(),
+                request);
+
+        // Then: We assert that the response we get back is the same as the expectedResponse.
+        UpdateReviewResponse expectedResponse = new UpdateReviewResponse(
+                updatedBookReview.getBook_reviews_id(),
+                updatedBookReview.getBook().getBook_id(),
+                updatedBookReview.getBook().getTitle(),
+                updatedBookReview.getRating(),
+                updatedBookReview.getReview());
+
+        assertThat(response).isEqualTo(expectedResponse);
+
+        // And: That the rating has not changed comparing the initialReview with the updated one.
+        assertThat(response.rating()).isEqualTo(initialReview.getRating());
+    }
 }
