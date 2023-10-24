@@ -19,11 +19,13 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.function.Executable;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.util.Optional;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
@@ -431,5 +433,42 @@ public class ShelfServiceTest {
                         UpdateShelfResponse::shelf_description
                 )
                 .containsExactly(initialShelf.getName(), initialShelf.getImage(), initialShelf.getDescription());
+    }
+
+    @Test
+    void updateShelfByIdShouldReturnErrorWhenUserIsNotAllowed() {
+        // Given: A valid request with a valid shelf but with a user that doesn't own that shelf.
+        UpdateShelfRequest request = new UpdateShelfRequest(
+                "Nueva estanteria editada",
+                "imagen-editada.jpg",
+                "Mi nueva estanteria editada",
+                false
+        );
+
+        UserEntity nonAllowedUser = new UserEntity(
+                "Tamara", "tamara@gmail.com", "asdasda");
+
+        when(shelfRepository.findById(2L))
+                .thenReturn(Optional.of(shelf));
+
+        when(auth.getPrincipal())
+                .thenReturn(userDetails);
+        when(userDetails.getUsername())
+                .thenReturn(nonAllowedUser.getUsername());
+
+        SecurityContextHolder.getContext().setAuthentication(auth);
+
+        /* When: We call the updateShelfById with a valid shelf id and a valid request,
+           but a user that doesn't own that shelf.
+         */
+        Executable action = () -> service.updateShelfById(shelf.getShelf_id(),request);
+
+        // Then: We assert that it throws a AccessDeniedException.
+        AccessDeniedException exception = assertThrows(AccessDeniedException.class,
+                action);
+
+        // And: That the error message thrown by the exception is equal to the expected error message.
+        String expectedErrorMessage = "Not allowed to update that shelf.";
+        assertEquals(expectedErrorMessage ,exception.getMessage());
     }
 }
