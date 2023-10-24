@@ -93,7 +93,7 @@ public class BookReviewService {
         if (request.rating() != null){
             updatedBookReview.setRating(request.rating());
         }
-        if (request.rating() != null){
+        if (request.review() != null){
             updatedBookReview.setReview(request.review());
         }
 
