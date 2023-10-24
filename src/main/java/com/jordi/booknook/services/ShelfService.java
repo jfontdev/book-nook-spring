@@ -61,8 +61,13 @@ public class ShelfService {
             throw new EntityNotFoundException("Shelf Not found.");
         }
 
-        ShelfEntity updatedShelf = shelf.get();
+        String shelfUsername = shelf.get().getUser().getUsername();
 
+        if (!Objects.equals(username, shelfUsername)){
+            throw new AccessDeniedException("Not allowed to update that shelf.");
+        }
+
+        ShelfEntity updatedShelf = shelf.get();
         if (request.name() != null){
             updatedShelf.setName(request.name());
         }
