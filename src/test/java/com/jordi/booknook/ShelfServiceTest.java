@@ -28,6 +28,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -612,6 +613,47 @@ public class ShelfServiceTest {
         // And: That the error message thrown by the exception is equal to the expected error message.
         String expectedMessage = "Not allowed to add a book to that shelf.";
         assertThat(exception.getMessage()).isEqualTo(expectedMessage);
+    }
+
+    @Test
+    void getAllUserShelvesShouldReturnAll(){
+        // Given: A list of 3 shelves assigned to the user1 entity.
+        ShelfEntity shelf1 = new ShelfEntity(
+                user1,
+                "Nueva estanteria 1",
+                "imagen1.jpg",
+                "Mi nueva estanteria 1",
+                true);
+        ShelfEntity shelf2 = new ShelfEntity(
+                user1,
+                "Nueva estanteria 2",
+                "imagen2.jpg",
+                "Mi nueva estanteria 2",
+                false);
+        ShelfEntity shelf3 = new ShelfEntity(
+                user1,
+                "Nueva estanteria 3",
+                "imagen3.jpg",
+                "Mi nueva estanteria 3",
+                true);
+
+        when(auth.getPrincipal())
+                .thenReturn(userDetails);
+        when(userDetails.getUsername())
+                .thenReturn(user1.getUsername());
+        when(userRepository.findByUsername(user1.getUsername()))
+                .thenReturn(Optional.of(user1));
+
+        SecurityContextHolder.getContext().setAuthentication(auth);
+
+        when(shelfRepository.findAllByUser(user1))
+                .thenReturn(List.of(shelf1,shelf2,shelf3));
+
+        // When: The service method getAllUserShelves is called with auth user1.
+        List<ShelfEntity> shelves = service.getAllUserShelves();
+
+        // Then: We get the exact 3 shelves we added for this test.
+        assertThat(shelves).containsExactly(shelf1,shelf2,shelf3);
     }
 
 }
