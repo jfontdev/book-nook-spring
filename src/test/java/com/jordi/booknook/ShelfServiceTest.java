@@ -28,8 +28,6 @@ import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -66,6 +64,7 @@ public class ShelfServiceTest {
        LocalDateTime date = LocalDateTime.now();
 
        user1 = new UserEntity("jordi", "jordi@email.com", "password");
+       user1.setUser_id(1L);
 
        shelf = new ShelfEntity(
                user1,
@@ -757,5 +756,52 @@ public class ShelfServiceTest {
 
         // And: We assert that we get the exact 2 private shelves that the current user has assigned.
         assertThat(privateShelves).containsExactly(shelf1, shelf2);
+    }
+
+    @Test
+    void getAllUserPublicShelvesShouldReturnAllUserPublicShelves() {
+        // Given: A valid request with a valid user id, that user has 3 shelves assigned.
+        Long userId = 1L;
+
+        ShelfEntity shelf1 = new ShelfEntity(
+                user1,
+                "Nueva estanteria 1",
+                "imagen1.jpg",
+                "Mi nueva estanteria 1",
+                false);
+        ShelfEntity shelf2 = new ShelfEntity(
+                user1,
+                "Nueva estanteria 2",
+                "imagen2.jpg",
+                "Mi nueva estanteria 2",
+                false);
+        ShelfEntity shelf3 = new ShelfEntity(
+                user1,
+                "Nueva estanteria 3",
+                "imagen3.jpg",
+                "Mi nueva estanteria 3",
+                true);
+
+        when(userRepository.findById(userId))
+                .thenReturn(Optional.of(user1));
+
+        // We mock the filtering logic of the repository method, returning only the public shelves.
+        List<ShelfEntity> allShelves = List.of(shelf1, shelf2, shelf3);
+        when(shelfRepository.findAllByUserAndPublicShelfIsTrue(user1))
+                .thenAnswer(invocation -> {
+                    return allShelves
+                            .stream()
+                            .filter(ShelfEntity::getPublic_shelf)
+                            .collect(Collectors.toList());
+                });
+
+        // When: We call the getAllUserPublicShelves service method with the valid request.
+        List<ShelfEntity> publicShelves = service.getAllUserPublicShelves(user1.getUser_id());
+
+        // Then: We verify that shelfRepository.findAllByUserAndPublicShelfIsTrue(user1) was called.
+        verify(shelfRepository).findAllByUserAndPublicShelfIsTrue(user1);
+
+        // And: We assert that we get the exact 1 public shelf that the current user has assigned.
+        assertThat(publicShelves).containsExactly(shelf3);
     }
 }
