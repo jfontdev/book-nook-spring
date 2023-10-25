@@ -656,4 +656,51 @@ public class ShelfServiceTest {
         assertThat(shelves).containsExactly(shelf1,shelf2,shelf3);
     }
 
+    @Test
+    void getOneUserShelfShouldReturn() {
+       // Given: A valid request with a shelf id owned by the logged user.
+       when(auth.getPrincipal())
+               .thenReturn(userDetails);
+       when(userDetails.getUsername())
+               .thenReturn(user1.getUsername());
+       when(userRepository.findByUsername(user1.getUsername()))
+               .thenReturn(Optional.of(user1));
+
+       SecurityContextHolder.getContext().setAuthentication(auth);
+
+       when(shelfRepository.findOneByUserAndShelfId(user1,shelf.getShelf_id()))
+               .thenReturn(Optional.of(shelf));
+
+       // When: We call the getOneUserShelf service method with the valid shelf id.
+       ShelfEntity shelfByUser = service.getOneUserShelf(shelf.getShelf_id());
+
+       // Then: We assert that we get back that shelf owned by the user.
+       assertThat(shelfByUser).isEqualTo(shelf);
+    }
+
+    @Test
+    void getOneUserShelfShouldReturnErrorWhenTheShelfIsNotFound() {
+       // Given: A bad request with an invalid shelf id and a logged user.
+       Long nonValidShelfId = 1L;
+
+       when(auth.getPrincipal())
+               .thenReturn(userDetails);
+       when(userDetails.getUsername())
+               .thenReturn(user1.getUsername());
+       when(userRepository.findByUsername(user1.getUsername()))
+               .thenReturn(Optional.of(user1));
+
+       SecurityContextHolder.getContext().setAuthentication(auth);
+
+       // When: We call the service method getOneUserShelf with the invalid shelf id.
+       Executable action = () -> service.getOneUserShelf(nonValidShelfId);
+
+        // Then: We assert that it throws a EntityNotFoundException.
+       EntityNotFoundException exception = assertThrows(EntityNotFoundException.class,
+               action);
+
+       // And: That the error message thrown by the exception is equal to the expected error message.
+       String expectedErrorMessage = "Shelf Not Found.";
+       assertThat(expectedErrorMessage).isEqualTo(exception.getMessage());
+    }
 }
