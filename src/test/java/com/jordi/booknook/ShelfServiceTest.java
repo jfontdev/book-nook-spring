@@ -28,12 +28,16 @@ import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -702,5 +706,56 @@ public class ShelfServiceTest {
        // And: That the error message thrown by the exception is equal to the expected error message.
        String expectedErrorMessage = "Shelf Not Found.";
        assertThat(expectedErrorMessage).isEqualTo(exception.getMessage());
+    }
+
+    @Test
+    void getAllUserPrivateShelvesShouldReturnAllUserPrivateShelves() {
+        // Given: A valid request with a logged user that has 3 shelves assigned.
+        ShelfEntity shelf1 = new ShelfEntity(
+                user1,
+                "Nueva estanteria 1",
+                "imagen1.jpg",
+                "Mi nueva estanteria 1",
+                false);
+        ShelfEntity shelf2 = new ShelfEntity(
+                user1,
+                "Nueva estanteria 2",
+                "imagen2.jpg",
+                "Mi nueva estanteria 2",
+                false);
+        ShelfEntity shelf3 = new ShelfEntity(
+                user1,
+                "Nueva estanteria 3",
+                "imagen3.jpg",
+                "Mi nueva estanteria 3",
+                true);
+
+        when(auth.getPrincipal())
+                .thenReturn(userDetails);
+        when(userDetails.getUsername())
+                .thenReturn(user1.getUsername());
+        when(userRepository.findByUsername(user1.getUsername()))
+                .thenReturn(Optional.of(user1));
+
+        SecurityContextHolder.getContext().setAuthentication(auth);
+
+        // We mock the filtering logic of the repository method, returning only the private shelves.
+        List<ShelfEntity> allShelves = List.of(shelf1, shelf2, shelf3);
+        when(shelfRepository.findAllByUserAndPublicShelfIsFalse(user1))
+                .thenAnswer(invocation -> {
+                    return allShelves
+                            .stream()
+                            .filter(shelf -> !shelf.getPublic_shelf())
+                            .collect(Collectors.toList());
+                });
+
+        // When: We call the getAllUserPrivateShelves service method with the valid request.
+        List<ShelfEntity> privateShelves = service.getAllUserPrivateShelves();
+
+        // Then: We verify that shelfRepository.findAllByUserAndPublicShelfIsFalse(user1) was called.
+        verify(shelfRepository).findAllByUserAndPublicShelfIsFalse(user1);
+
+        // And: We assert that we get the exact 2 private shelves that the current user has assigned.
+        assertThat(privateShelves).containsExactly(shelf1, shelf2);
     }
 }
