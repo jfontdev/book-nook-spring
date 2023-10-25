@@ -1,9 +1,12 @@
 package com.jordi.booknook;
 
+import com.jordi.booknook.models.BookEntity;
 import com.jordi.booknook.models.ShelfEntity;
 import com.jordi.booknook.models.UserEntity;
+import com.jordi.booknook.payload.request.AddBookToShelfRequest;
 import com.jordi.booknook.payload.request.NewShelfRequest;
 import com.jordi.booknook.payload.request.UpdateShelfRequest;
+import com.jordi.booknook.payload.response.AddBookToShelfResponse;
 import com.jordi.booknook.payload.response.NewShelfResponse;
 import com.jordi.booknook.payload.response.UpdateShelfResponse;
 import com.jordi.booknook.repositories.BookRepository;
@@ -23,6 +26,8 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -36,6 +41,7 @@ public class ShelfServiceTest {
     ShelfService service;
     static UserEntity user1;
     static ShelfEntity shelf;
+    static BookEntity book1;
 
    @Mock
    ShelfRepository shelfRepository;
@@ -51,7 +57,11 @@ public class ShelfServiceTest {
    @BeforeAll
    static void setUpCommonEntities() {
        // Create common entities that can be reused in multiple tests.
+       BigDecimal price = new BigDecimal("12.50");
+       LocalDateTime date = LocalDateTime.now();
+
        user1 = new UserEntity("jordi", "jordi@email.com", "password");
+
        shelf = new ShelfEntity(
                user1,
                "Nueva estanteria",
@@ -59,6 +69,10 @@ public class ShelfServiceTest {
                "Mi nueva estanteria",
                true);
        shelf.setShelf_id(2L);
+
+       book1 = new BookEntity(
+               "Portada","Nuevo libro", "Un gran libro",price,date,date);
+       book1.setBook_id(5L);
    }
 
    @BeforeEach
@@ -471,4 +485,133 @@ public class ShelfServiceTest {
         String expectedErrorMessage = "Not allowed to update that shelf.";
         assertEquals(expectedErrorMessage ,exception.getMessage());
     }
+
+    @Test
+    void addBookToShelfShouldAddTheBookAndShouldReturn() {
+        // Given: A valid request with a valid shelf id, book id and a logged user that owns the shelf
+        AddBookToShelfRequest request = new AddBookToShelfRequest(5L,2L);
+
+        when(auth.getPrincipal())
+                .thenReturn(userDetails);
+        when(userDetails.getUsername())
+                .thenReturn(user1.getUsername());
+
+        SecurityContextHolder.getContext().setAuthentication(auth);
+
+        when(bookRepository.findById(request.book_id()))
+                .thenReturn(Optional.of(book1));
+
+        when(shelfRepository.findById(request.shelf_id()))
+                .thenReturn(Optional.of(shelf));
+
+        ShelfEntity updatedShelf = shelf;
+
+        updatedShelf.getBooks().add(book1);
+
+        // When: We call the method addBookToShelf with the valid request.
+        AddBookToShelfResponse response = service.addBookToShelf(request);
+
+        /* Then: We assert that the response we get back is the same as the expectedResponse.
+                 extracting the last book from the updated shelf and comparing it with the
+                 response we get back from the service method
+         */
+        BookEntity lastBook = updatedShelf.getBooks()
+                .stream()
+                .reduce((one, two) -> two)
+                .orElseThrow();
+
+        AddBookToShelfResponse expectedResponse = new AddBookToShelfResponse(lastBook,updatedShelf);
+
+        assertThat(response).isEqualTo(expectedResponse);
+    }
+
+    @Test
+    void addBookToShelfShouldReturnErrorWhenTheBookIsNotFound() {
+        // Given: A bad request with a valid shelf with correct owner but an invalid book.
+        AddBookToShelfRequest request = new AddBookToShelfRequest(1L,2L);
+
+        when(auth.getPrincipal())
+                .thenReturn(userDetails);
+        when(userDetails.getUsername())
+                .thenReturn(user1.getUsername());
+
+        SecurityContextHolder.getContext().setAuthentication(auth);
+
+        when(shelfRepository.findById(request.shelf_id()))
+                .thenReturn(Optional.of(shelf));
+
+        // When: We call the service method addBookToShelf with the bad request.
+        Executable action = () -> service.addBookToShelf(request);
+
+        // Then: We assert that it throws a EntityNotFoundException.
+        EntityNotFoundException exception = assertThrows(EntityNotFoundException.class,
+                action);
+
+        // And: That the error message thrown by the exception is equal to the expected error message.
+        String expectedMessage = "Book Not Found.";
+        assertThat(exception.getMessage()).isEqualTo(expectedMessage);
+    }
+
+    @Test
+    void addBookToShelfShouldReturnErrorWhenTheShelfIsNotFound() {
+        // Given: A bad request with a valid book, an invalid shelf and a logged user.
+        AddBookToShelfRequest request = new AddBookToShelfRequest(5L,1L);
+
+        when(auth.getPrincipal())
+                .thenReturn(userDetails);
+        when(userDetails.getUsername())
+                .thenReturn(user1.getUsername());
+
+        SecurityContextHolder.getContext().setAuthentication(auth);
+
+        when(bookRepository.findById(request.book_id()))
+                .thenReturn(Optional.of(book1));
+
+        // When: We call the service method addBookToShelf with the bad request.
+        Executable action = () -> service.addBookToShelf(request);
+
+        // Then: We assert that it throws a EntityNotFoundException.
+        EntityNotFoundException exception = assertThrows(EntityNotFoundException.class,
+                action);
+
+        // And: That the error message thrown by the exception is equal to the expected error message.
+        String expectedMessage = "Shelf Not Found.";
+        assertThat(exception.getMessage()).isEqualTo(expectedMessage);
+    }
+
+    @Test
+    void addBookToShelfShouldReturnErrorWhenTheUserIsNotTheOwner() {
+        /* Given: A bad request with a valid book, a valid shelf and a logged user.
+                  that is not the owner of that shelf.
+         */
+        AddBookToShelfRequest request = new AddBookToShelfRequest(5L,2L);
+
+        UserEntity nonAllowedUser = new UserEntity(
+                "Tamara", "tamara@gmail.com", "asdasda");
+
+        when(auth.getPrincipal())
+                .thenReturn(userDetails);
+        when(userDetails.getUsername())
+                .thenReturn(nonAllowedUser.getUsername());
+
+        SecurityContextHolder.getContext().setAuthentication(auth);
+
+        when(bookRepository.findById(request.book_id()))
+                .thenReturn(Optional.of(book1));
+
+        when(shelfRepository.findById(request.shelf_id()))
+                .thenReturn(Optional.of(shelf));
+
+        // When: We call the service method addBookToShelf with the bad request.
+        Executable action = () -> service.addBookToShelf(request);
+
+        // Then: We assert that it throws a AccessDeniedException.
+        AccessDeniedException exception = assertThrows(AccessDeniedException.class,
+                action);
+
+        // And: That the error message thrown by the exception is equal to the expected error message.
+        String expectedMessage = "Not allowed to add a book to that shelf.";
+        assertThat(exception.getMessage()).isEqualTo(expectedMessage);
+    }
+
 }
