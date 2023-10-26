@@ -15,6 +15,7 @@ import org.springframework.data.domain.Example;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -71,6 +72,21 @@ public class BookServiceTest {
 
         // And: We assert that the list is equal to the expectedBooks list
         assertThat(books).isEqualTo(expectedBooks);
+    }
+
+    @Test
+    void getBookByIdShouldReturn(){
+        // Given: A valid request with a valid book id.
+        Long bookId = 5L;
+
+        when(bookRepository.findById(bookId))
+                .thenReturn(Optional.of(book1));
+
+        // When: We call the getBookById service method with a valid book id.
+        BookEntity book = service.getBookById(book1.getBook_id()).get();
+
+        // Then: We assert that the book is equal to book1.
+        assertThat(book).isEqualTo(book1);
     }
 
     @Test
