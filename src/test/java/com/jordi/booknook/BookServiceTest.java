@@ -46,6 +46,34 @@ public class BookServiceTest {
     }
 
     @Test
+    void getAllBooksShouldReturn(){
+        // Given: A valid request.
+        BigDecimal price = new BigDecimal("12.50");
+        LocalDateTime date = LocalDateTime.now();
+
+        BookEntity book = new BookEntity(
+                "Portada","Nuevo libro", "Un gran libro",price,date,date);
+        BookEntity book2 = new BookEntity(
+                "Portada 1","Nuevo libro 2", "Un gran libro 2",price,date,date);
+        BookEntity book3 = new BookEntity(
+                "Portada 2","Nuevo libro 3", "Un gran libro 3",price,date,date);
+
+        when(bookRepository.findAll())
+                .thenReturn(List.of(book,book2,book3));
+
+        // When: We call the getBooks service method.
+        List<BookEntity> books = service.getBooks();
+
+        List<BookEntity> expectedBooks = List.of(book, book2, book3);
+
+        // Then: We assert that the list returned has exactly three books.
+        assertThat(books).hasSize(3);
+
+        // And: We assert that the list is equal to the expectedBooks list
+        assertThat(books).isEqualTo(expectedBooks);
+    }
+
+    @Test
     void searchShouldReturn() {
         // Given: A valid request with a search string.
         UniversalSearch search = new UniversalSearch("gran");
