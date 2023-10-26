@@ -47,28 +47,38 @@ public class BookServiceTest {
 
     @Test
     void searchShouldReturn() {
+        // Given: A valid request with a search string.
         UniversalSearch search = new UniversalSearch("gran");
 
         when(bookRepository.findAll(any(Example.class)))
                 .thenReturn(List.of(book1));
 
+        // When: We call the search service method with the valid search.
         List<BookEntity> books = service.search(search);
 
         List<BookEntity> expectedBooks = List.of(book1);
 
+        // Then: We assert that the list returned has exactly one book.
         assertThat(books).hasSize(1);
+
+        // And: We assert that the list is equal to the expectedBooks list
         assertThat(books).isEqualTo(expectedBooks);
     }
 
     @Test
     void searchShouldReturnEmptyListWhenEmptyStringSearch() {
+        // Given: A valid request with an empty string search value.
         UniversalSearch search = new UniversalSearch("");
 
+        // When: We call the search service method with the valid empty string search.
         List<BookEntity> books = service.search(search);
 
         List<BookEntity> expectedEmptyList = List.of();
 
+        // Then: We assert that the list returned has exactly zero books.
         assertThat(books).hasSize(0);
+
+        // And: We assert that the list is equal to the expectedBooks list
         assertThat(books).isEqualTo(expectedEmptyList);
     }
 }
