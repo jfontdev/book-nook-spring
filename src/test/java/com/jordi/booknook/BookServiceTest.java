@@ -2,6 +2,7 @@ package com.jordi.booknook;
 
 import com.jordi.booknook.models.BookEntity;
 import com.jordi.booknook.models.UniversalSearch;
+import com.jordi.booknook.payload.request.SortRequest;
 import com.jordi.booknook.repositories.BookRepository;
 import com.jordi.booknook.services.BookService;
 import org.junit.jupiter.api.BeforeAll;
@@ -14,6 +15,7 @@ import org.springframework.data.domain.Example;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 
@@ -124,5 +126,49 @@ public class BookServiceTest {
 
         // And: We assert that the list is equal to the expectedBooks list
         assertThat(books).isEqualTo(expectedEmptyList);
+    }
+
+    @Test
+    void getAllBooksSortedByPriceOrReviewWithPriceDescShouldReturnAListWithBooksOrderedByPriceDesc(){
+        /* Given: A valid request with sort param "PriceDesc" to get the list of books
+                  ordered by Price descendent.
+        */
+        BigDecimal price = new BigDecimal("12.50");
+        BigDecimal price2 = new BigDecimal("13.50");
+        BigDecimal price3 = new BigDecimal("21.50");
+        LocalDateTime date = LocalDateTime.now();
+
+        BookEntity book = new BookEntity(
+                "Portada","Nuevo libro", "Un gran libro",price,date,date);
+        BookEntity book2 = new BookEntity(
+                "Portada 1","Nuevo libro 2", "Un gran libro 2",price2,date,date);
+        BookEntity book3 = new BookEntity(
+                "Portada 2","Nuevo libro 3", "Un gran libro 3",price3,date,date);
+
+
+        SortRequest request = new SortRequest("priceDesc");
+
+        List<BookEntity> allBooks = List.of(book,book2,book3);
+
+        // We mock the repository method call that filters the books and returns them ordered by Price descendent.
+        when(bookRepository.findAllSorted(request.sortBy()))
+                .thenAnswer( invocation -> {
+                    return allBooks.stream()
+                            .sorted((Comparator
+                                    .comparing(BookEntity::getPrice)
+                                    .reversed()))
+                            .toList();
+        });
+
+        // When: We call the getAllBooksSortedByPriceOrReview service method with the valid request.
+        List<BookEntity> books = service.getAllBooksSortedByPriceOrReview(request);
+
+        List<BookEntity> expectedBooksOrder = List.of(book3,book2,book);
+
+        // Then: We assert that the list returned has exactly 3 books.
+        assertThat(books).hasSize(3);
+
+        // And: We assert that the list is equal to the expectedBookOrder list.
+        assertThat(books).isEqualTo(expectedBooksOrder);
     }
 }
