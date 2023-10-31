@@ -1,7 +1,10 @@
 package com.jordi.booknook;
 
 import com.jordi.booknook.models.BookEntity;
+import com.jordi.booknook.models.BookReviewEntity;
+import com.jordi.booknook.models.UserEntity;
 import com.jordi.booknook.repositories.BookRepository;
+import com.jordi.booknook.repositories.BookReviewRepository;
 import com.jordi.booknook.repositories.UserRepository;
 import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
@@ -32,6 +35,7 @@ import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.equalTo;
@@ -47,6 +51,8 @@ public class BookControllerTestContainerTest {
 
     @Autowired
     BookRepository repository;
+    @Autowired
+    BookReviewRepository reviewRepository;
     @Autowired
     UserRepository userRepository;
 
@@ -81,6 +87,8 @@ public class BookControllerTestContainerTest {
         TransactionDefinition def = new DefaultTransactionDefinition();
         TransactionStatus status = transactionManager.getTransaction(def);
         try {
+            reviewRepository.deleteAll();
+            reviewRepository.flush();
             repository.deleteAll();
             repository.flush();
             entityManager.createNativeQuery("ALTER TABLE books AUTO_INCREMENT=1").executeUpdate();
@@ -297,5 +305,229 @@ public class BookControllerTestContainerTest {
                 .body("[0].title", equalTo(books.get(0).getTitle()))
                 .body("[1].title", equalTo(books.get(2).getTitle()))
                 .body("[2].title", equalTo(books.get(1).getTitle()));
+    }
+
+    @Test
+    void sortedBooksShouldReturnABookListOrderedByPriceDescendant()  {
+        // Given: A valid request with a logged-in user to the POST /api/v1/books/sorted endpoint.
+        Map<String, String> headers = new HashMap<String, String>() {
+            {
+                put("Accept", "application/json");
+                put("Authorization", "Bearer " + token);
+            }
+        };
+
+        BigDecimal price1 = new BigDecimal("12.50");
+        BigDecimal price2 = new BigDecimal("21.50");
+        BigDecimal price3 = new BigDecimal("15.50");
+        LocalDateTime date = LocalDateTime.now();
+
+        List<BookEntity> books = List.of(
+                new BookEntity(
+                        "Portada", "Nuevo libro z", "Un gran libro", price1, date, date),
+                new BookEntity(
+                        "Portada 1", "Nuevo libro x", "Un gran libro 2", price2, date, date),
+                new BookEntity(
+                        "Portada 2", "Nuevo libro c", "Un gran libro 3", price3, date, date)
+        );
+        repository.saveAll(books);
+
+        ObjectNode requestBody = new ObjectMapper().createObjectNode();
+        requestBody.put("sortBy", "priceDesc");
+
+        // When: The POST request to sort a book with the body that contains the sorting value.
+        Response response = given()
+                .headers(headers)
+                .body(requestBody.toString())
+                .contentType(ContentType.JSON)
+                .when()
+                .post("/api/v1/books/sorted");
+
+        // Then: We assert that we get a status code 200 back.
+        response.then()
+                .statusCode(200)
+                .log()
+                .body(true);
+
+
+        // And: We assert that the order of the JSON objects list are ordered by Price descendant comparing the titles.
+        response.then()
+                .body("[0].title", equalTo(books.get(1).getTitle()))
+                .body("[1].title", equalTo(books.get(2).getTitle()))
+                .body("[2].title", equalTo(books.get(0).getTitle()));
+    }
+
+    @Test
+    void sortedBooksShouldReturnABookListOrderedByRatingsAscendant()  {
+        // Given: A valid request with a logged-in user to the POST /api/v1/books/sorted endpoint.
+        Map<String, String> headers = new HashMap<String, String>() {
+            {
+                put("Accept", "application/json");
+                put("Authorization", "Bearer " + token);
+            }
+        };
+
+        BigDecimal price = new BigDecimal("12.50");
+
+        LocalDateTime date = LocalDateTime.now();
+
+        List<BookEntity> books = List.of(
+                new BookEntity(
+                        "Portada", "Nuevo libro z", "Un gran libro", price, date, date),
+                new BookEntity(
+                        "Portada 1", "Nuevo libro x", "Un gran libro 2", price, date, date),
+                new BookEntity(
+                        "Portada 2", "Nuevo libro c", "Un gran libro 3", price, date, date)
+        );
+
+        repository.saveAll(books);
+
+        Optional<UserEntity> user = userRepository.findById(1L);
+
+        List<BookReviewEntity> reviews = List.of(
+                new BookReviewEntity(books.get(0),user.get(),1,"No me gusto"),
+                new BookReviewEntity (books.get(0),user.get(),2,"No me gusto"),
+                new BookReviewEntity(books.get(1),user.get(),3,"No esta mal"),
+                new BookReviewEntity(books.get(2),user.get(),2,"No me gusto")
+        );
+
+        reviewRepository.saveAll(reviews);
+
+        ObjectNode requestBody = new ObjectMapper().createObjectNode();
+        requestBody.put("sortBy", "ratingsAsc");
+
+        // When: The POST request to sort a book with the body that contains the sorting value.
+        Response response = given()
+                .headers(headers)
+                .body(requestBody.toString())
+                .contentType(ContentType.JSON)
+                .when()
+                .post("/api/v1/books/sorted");
+
+        // Then: We assert that we get a status code 200 back.
+        response.then()
+                .statusCode(200)
+                .log()
+                .body(true);
+
+
+        // And: We assert that the order of the JSON objects list are ordered by Ratings ascendant comparing the titles.
+        response.then()
+                .body("[0].title", equalTo(books.get(0).getTitle()))
+                .body("[1].title", equalTo(books.get(2).getTitle()))
+                .body("[2].title", equalTo(books.get(1).getTitle()));
+    }
+
+
+    @Test
+    void sortedBooksShouldReturnABookListOrderedByRatingsDescendant()  {
+        // Given: A valid request with a logged-in user to the POST /api/v1/books/sorted endpoint.
+        Map<String, String> headers = new HashMap<String, String>() {
+            {
+                put("Accept", "application/json");
+                put("Authorization", "Bearer " + token);
+            }
+        };
+
+        BigDecimal price = new BigDecimal("12.50");
+
+        LocalDateTime date = LocalDateTime.now();
+
+        List<BookEntity> books = List.of(
+                new BookEntity(
+                        "Portada", "Nuevo libro z", "Un gran libro", price, date, date),
+                new BookEntity(
+                        "Portada 1", "Nuevo libro x", "Un gran libro 2", price, date, date),
+                new BookEntity(
+                        "Portada 2", "Nuevo libro c", "Un gran libro 3", price, date, date)
+        );
+
+        repository.saveAll(books);
+
+        Optional<UserEntity> user = userRepository.findById(1L);
+
+        List<BookReviewEntity> reviews = List.of(
+                new BookReviewEntity(books.get(0),user.get(),1,"No me gusto"),
+                new BookReviewEntity (books.get(0),user.get(),2,"No me gusto"),
+                new BookReviewEntity(books.get(1),user.get(),3,"No esta mal"),
+                new BookReviewEntity(books.get(2),user.get(),2,"No me gusto")
+        );
+
+        reviewRepository.saveAll(reviews);
+
+        ObjectNode requestBody = new ObjectMapper().createObjectNode();
+        requestBody.put("sortBy", "ratingsDesc");
+
+        // When: The POST request to sort a book with the body that contains the sorting value.
+        Response response = given()
+                .headers(headers)
+                .body(requestBody.toString())
+                .contentType(ContentType.JSON)
+                .when()
+                .post("/api/v1/books/sorted");
+
+        // Then: We assert that we get a status code 200 back.
+        response.then()
+                .statusCode(200)
+                .log()
+                .body(true);
+
+
+        // And: We assert that the order of the JSON objects list are ordered by Ratings descendant comparing the titles.
+        response.then()
+                .body("[0].title", equalTo(books.get(1).getTitle()))
+                .body("[1].title", equalTo(books.get(2).getTitle()))
+                .body("[2].title", equalTo(books.get(0).getTitle()));
+    }
+
+
+    @Test
+    void sortedBooksShouldReturnABookListWithAllTheBooksWhenSortIsNotFound()  {
+        // Given: A valid request with a logged-in user to the POST /api/v1/books/sorted endpoint.
+        Map<String, String> headers = new HashMap<String, String>() {
+            {
+                put("Accept", "application/json");
+                put("Authorization", "Bearer " + token);
+            }
+        };
+
+        BigDecimal price = new BigDecimal("12.50");
+
+        LocalDateTime date = LocalDateTime.now();
+
+        List<BookEntity> books = List.of(
+                new BookEntity(
+                        "Portada", "Nuevo libro z", "Un gran libro", price, date, date),
+                new BookEntity(
+                        "Portada 1", "Nuevo libro x", "Un gran libro 2", price, date, date),
+                new BookEntity(
+                        "Portada 2", "Nuevo libro c", "Un gran libro 3", price, date, date)
+        );
+
+        repository.saveAll(books);
+
+        ObjectNode requestBody = new ObjectMapper().createObjectNode();
+        requestBody.put("sortBy", "");
+
+        // When: The POST request to sort a book with the body that contains no sorting value.
+        Response response = given()
+                .headers(headers)
+                .body(requestBody.toString())
+                .contentType(ContentType.JSON)
+                .when()
+                .post("/api/v1/books/sorted");
+
+        // Then: We assert that we get a status code 200 back.
+        response.then()
+                .statusCode(200)
+                .log()
+                .body(true);
+
+
+        // And: We assert that the JSON objects list are returned as is without sort by comparing the titles.
+        response.then()
+                .body("[0].title", equalTo(books.get(0).getTitle()))
+                .body("[1].title", equalTo(books.get(1).getTitle()))
+                .body("[2].title", equalTo(books.get(2).getTitle()));
     }
 }
