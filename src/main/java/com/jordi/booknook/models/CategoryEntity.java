@@ -11,7 +11,7 @@ import java.util.Set;
 @Entity
 public class CategoryEntity {
     @Id
-    @GeneratedValue
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     Long category_id;
 
     String name;
