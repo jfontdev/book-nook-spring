@@ -248,4 +248,54 @@ public class BookControllerTestContainerTest {
         response.then()
                 .body("[0].title", equalTo(books.get(1).getTitle()));
     }
+
+    @Test
+    void sortedBooksShouldReturnABookListOrderedByPriceAscendant()  {
+        // Given: A valid request with a logged-in user to the POST /api/v1/books/sorted endpoint.
+        Map<String, String> headers = new HashMap<String, String>() {
+            {
+                put("Accept", "application/json");
+                put("Authorization", "Bearer " + token);
+            }
+        };
+
+        BigDecimal price1 = new BigDecimal("12.50");
+        BigDecimal price2 = new BigDecimal("21.50");
+        BigDecimal price3 = new BigDecimal("15.50");
+        LocalDateTime date = LocalDateTime.now();
+
+        List<BookEntity> books = List.of(
+                new BookEntity(
+                        "Portada", "Nuevo libro z", "Un gran libro", price1, date, date),
+                new BookEntity(
+                        "Portada 1", "Nuevo libro x", "Un gran libro 2", price2, date, date),
+                new BookEntity(
+                        "Portada 2", "Nuevo libro c", "Un gran libro 3", price3, date, date)
+        );
+        repository.saveAll(books);
+
+        ObjectNode requestBody = new ObjectMapper().createObjectNode();
+        requestBody.put("sortBy", "priceAsc");
+
+        // When: The POST request to sort a book with the body that contains the sorting value.
+        Response response = given()
+                .headers(headers)
+                .body(requestBody.toString())
+                .contentType(ContentType.JSON)
+                .when()
+                .post("/api/v1/books/sorted");
+
+        // Then: We assert that we get a status code 200 back.
+        response.then()
+                .statusCode(200)
+                .log()
+                .body(true);
+
+
+        // And: We assert that the order of the JSON objects list are ordered by Price ascendant comparing the titles.
+        response.then()
+                .body("[0].title", equalTo(books.get(0).getTitle()))
+                .body("[1].title", equalTo(books.get(2).getTitle()))
+                .body("[2].title", equalTo(books.get(1).getTitle()));
+    }
 }
