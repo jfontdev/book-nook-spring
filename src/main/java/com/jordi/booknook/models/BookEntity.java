@@ -21,7 +21,7 @@ import java.util.Set;
 @JsonPropertyOrder({"book_id", "title", "description", "cover", "categories", "images", "price", "created_at", "updated_at"})
 public class BookEntity {
     @Id
-    @GeneratedValue
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long book_id;
 
     @ManyToMany

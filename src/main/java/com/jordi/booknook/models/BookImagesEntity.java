@@ -10,7 +10,7 @@ import java.time.LocalDateTime;
 @Table(name = "book_images")
 public class BookImagesEntity {
     @Id
-    @GeneratedValue
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long book_images_id;
 
     @ManyToOne
