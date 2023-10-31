@@ -24,6 +24,8 @@ import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.support.DefaultTransactionDefinition;
 import org.testcontainers.containers.MySQLContainer;
+import org.testcontainers.shaded.com.fasterxml.jackson.databind.ObjectMapper;
+import org.testcontainers.shaded.com.fasterxml.jackson.databind.node.ObjectNode;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -199,5 +201,51 @@ public class BookControllerTestContainerTest {
         // And: We assert that the title of the JSON object is the same as the title of the "book" object.
         response.then()
                 .body("title", equalTo(book.getTitle()));
+    }
+
+    @Test
+    void searchBookShouldReturnABook()  {
+        // Given: A valid request with a logged-in user to the POST /api/v1/books/search endpoint.
+        Map<String, String> headers = new HashMap<String, String>() {
+            {
+                put("Accept", "application/json");
+                put("Authorization", "Bearer " + token);
+            }
+        };
+
+        BigDecimal price = new BigDecimal("12.50");
+        LocalDateTime date = LocalDateTime.now();
+
+        List<BookEntity> books = List.of(
+                new BookEntity(
+                        "Portada", "Nuevo libro z", "Un gran libro", price, date, date),
+                new BookEntity(
+                        "Portada 1", "Nuevo libro x", "Un gran libro 2", price, date, date),
+                new BookEntity(
+                        "Portada 2", "Nuevo libro c", "Un gran libro 3", price, date, date)
+        );
+        repository.saveAll(books);
+
+        ObjectNode requestBody = new ObjectMapper().createObjectNode();
+        requestBody.put("value", "x");
+
+        // When: The POST request to search a book with the body that contains the search value.
+        Response response = given()
+                .headers(headers)
+                .body(requestBody.toString())
+                .contentType(ContentType.JSON)
+                .when()
+                .post("/api/v1/books/search");
+
+        // Then: We assert that we get a status code 200 back.
+        response.then()
+                .statusCode(200)
+                .log()
+                .body(true);
+
+
+        // And: We assert that the title of the JSON object is the same as the title of the "book" object.
+        response.then()
+                .body("[0].title", equalTo(books.get(1).getTitle()));
     }
 }
