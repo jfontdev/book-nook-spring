@@ -89,7 +89,10 @@ public class BookReviewControllerTestContainerTest {
         try {
             repository.deleteAll();
             repository.flush();
+            bookRepository.deleteAll();
+            bookRepository.flush();
             entityManager.createNativeQuery("ALTER TABLE book_reviews AUTO_INCREMENT=1").executeUpdate();
+            entityManager.createNativeQuery("ALTER TABLE books AUTO_INCREMENT=1").executeUpdate();
             transactionManager.commit(status);
         } catch (Exception exception) {
             transactionManager.rollback(status);
@@ -212,5 +215,62 @@ public class BookReviewControllerTestContainerTest {
         // And: We assert that the response body as a string contains the message error "Book not found"
         String responseBody = response.body().asString();
         assertThat(responseBody,containsString("Book not found"));
+    }
+
+    @Test
+    void getReviewsByUserShouldReturn(){
+
+        // Given: A valid request with a logged-in user to the GET /api/v1/reviews/get endpoint.
+        Map<String, String> headers = new HashMap<String, String>() {
+            {
+                put("Accept", "application/json");
+                put("Authorization", "Bearer " + token);
+            }
+        };
+
+        BigDecimal price = new BigDecimal("12.50");
+        LocalDateTime date = LocalDateTime.now();
+
+        BookEntity book = new BookEntity(
+                "Portada", "Nuevo libro test 2", "Un gran libro", price, date, date);
+
+        bookRepository.save(book);
+
+        List<UserEntity> users = List.of(
+                new UserEntity("Usuario 2","usuario2@gmail.com","123456"),
+                new UserEntity("Usuario 3","usuario3@gmail.com","123456"),
+                new UserEntity("Usuario 4","usuario4@gmail.com","123456")
+        );
+        userRepository.saveAll(users);
+
+        Optional<UserEntity> user = userRepository.findById(1L);
+
+        List<BookReviewEntity> reviews = List.of(
+                new BookReviewEntity(book,user.get(),1,"No me gusto"),
+                new BookReviewEntity (book,users.get(0),2,"No me gusto"),
+                new BookReviewEntity(book,users.get(1),3,"No esta mal"),
+                new BookReviewEntity(book,users.get(2),5,"Me encanto")
+        );
+
+        repository.saveAll(reviews);
+
+        // When: The GET request to retrieve all reviews with a valid logged user is made.
+        Response response = given()
+                .headers(headers)
+                .contentType(ContentType.JSON)
+                .when()
+                .get("/api/v1/reviews/get");
+
+        // Then: We assert that we get back a status code 200.
+        response.then()
+                .statusCode(200)
+                .log()
+                .body(true);
+
+        /* And: That the review text of the first review in the JSON response
+                is the same as the review text of the first review on the reviews list.
+         */
+        response.then()
+                .body("reviews[0].review",equalTo(reviews.get(0).getReview()));
     }
 }
