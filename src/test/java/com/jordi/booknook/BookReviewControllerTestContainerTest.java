@@ -42,8 +42,6 @@ import static org.hamcrest.Matchers.equalTo;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 public class BookReviewControllerTestContainerTest {
-
-
     static MySQLContainer<?> database =
             new MySQLContainer<>("mysql:8.0.34");
 
@@ -133,7 +131,7 @@ public class BookReviewControllerTestContainerTest {
     @Test
     void getReviewByBookShouldReturn(){
 
-        // Given: A valid request with a logged-in user to the GET /api/v1/books/{book-id}/get endpoint.
+        // Given: A valid request with a logged-in user to the GET /api/v1/reviews/{book-id}/get endpoint.
         Map<String, String> headers = new HashMap<String, String>() {
             {
                 put("Accept", "application/json");
@@ -167,26 +165,30 @@ public class BookReviewControllerTestContainerTest {
 
         repository.saveAll(reviews);
 
+        // When: The GET request to retrieve all reviews with a valid book is made.
         Response response = given()
                 .headers(headers)
                 .contentType(ContentType.JSON)
                 .when()
                 .get("/api/v1/reviews/1/get");
 
+        // Then: We assert that we get back a status code 200.
         response.then()
                 .statusCode(200)
                 .log()
                 .body(true);
 
+        /* And: That the rating of the first review in the JSON response
+                is the same as the rating of the first review on the reviews list.
+         */
         response.then()
                 .body("reviews[0].rating",equalTo(reviews.get(0).getRating()));
-
     }
 
     @Test
     void getReviewByBookShouldReturnErrorWhenBookDoesNotExist(){
 
-        // Given: A valid request with a logged-in user to the GET /api/v1/books/{book-id}/get endpoint.
+        // Given: A bad request with an invalid book id to the GET /api/v1/reviews/{book-id}/get endpoint.
         Map<String, String> headers = new HashMap<String, String>() {
             {
                 put("Accept", "application/json");
@@ -194,17 +196,20 @@ public class BookReviewControllerTestContainerTest {
             }
         };
 
+        // When: The GET request to retrieve all reviews with an invalid book id is made.
         Response response = given()
                 .headers(headers)
                 .contentType(ContentType.JSON)
                 .when()
                 .get("/api/v1/reviews/1/get");
 
+        // Then: We assert that we get back a status code 404.
         response.then()
                 .statusCode(404)
                 .log()
                 .body(true);
 
+        // And: We assert that the response body as a string contains the message error "Book not found"
         String responseBody = response.body().asString();
         assertThat(responseBody,containsString("Book not found"));
     }
