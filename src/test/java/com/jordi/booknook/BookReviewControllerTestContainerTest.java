@@ -3,6 +3,7 @@ package com.jordi.booknook;
 import com.jordi.booknook.models.BookEntity;
 import com.jordi.booknook.models.BookReviewEntity;
 import com.jordi.booknook.models.UserEntity;
+import com.jordi.booknook.payload.request.NewReviewRequest;
 import com.jordi.booknook.repositories.BookRepository;
 import com.jordi.booknook.repositories.BookReviewRepository;
 import com.jordi.booknook.repositories.UserRepository;
@@ -26,6 +27,7 @@ import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.support.DefaultTransactionDefinition;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.testcontainers.containers.MySQLContainer;
 
 import java.math.BigDecimal;
@@ -272,5 +274,90 @@ public class BookReviewControllerTestContainerTest {
          */
         response.then()
                 .body("reviews[0].review",equalTo(reviews.get(0).getReview()));
+    }
+
+    @Test
+    void addReviewByUserShouldAddAndReturn(){
+        // Given: A valid request with a logged-in user to the POST /api/v1/reviews/ endpoint.
+        Map<String, String> headers = new HashMap<String, String>() {
+            {
+                put("Accept", "application/json");
+                put("Authorization", "Bearer " + token);
+            }
+        };
+
+        BigDecimal price = new BigDecimal("12.50");
+        LocalDateTime date = LocalDateTime.now();
+
+        BookEntity book = new BookEntity(
+                "Portada", "Nuevo libro test 2", "Un gran libro", price, date, date);
+
+        bookRepository.save(book);
+
+        NewReviewRequest newReviewRequest = new NewReviewRequest(book.getBook_id(),5,null);
+
+        // When: The POST request to add a review with and a valid body and a valid logged user is made.
+        Response response = given()
+                .headers(headers)
+                .contentType(ContentType.JSON)
+                .body(newReviewRequest)
+                .when()
+                .post("/api/v1/reviews");
+
+
+        // Then: We assert that we get back a status code 200.
+        response.then()
+                .statusCode(200)
+                .log()
+                .body(true);
+
+        /* And: That the rating of the review we added and got back as a JSON response
+                is the same as the rating of the review we send on the body.
+         */
+        response.then()
+                .body("rating",equalTo(newReviewRequest.rating()));
+    }
+
+    @Test
+    void addReviewByUserShouldReturnValidationErrorMessage(){
+        // Given: A bad request with a logged-in user to the POST /api/v1/reviews/ endpoint.
+        Map<String, String> headers = new HashMap<String, String>() {
+            {
+                put("Accept", "application/json");
+                put("Authorization", "Bearer " + token);
+            }
+        };
+
+        BigDecimal price = new BigDecimal("12.50");
+        LocalDateTime date = LocalDateTime.now();
+
+        BookEntity book = new BookEntity(
+                "Portada", "Nuevo libro test 2", "Un gran libro", price, date, date);
+
+        bookRepository.save(book);
+
+        NewReviewRequest newReviewRequest = new NewReviewRequest(book.getBook_id(),null,null);
+
+        // When: The POST request to add a review with bad body and a valid logged user is made.
+        Response response = given()
+                .headers(headers)
+                .contentType(ContentType.JSON)
+                .body(newReviewRequest)
+                .when()
+                .post("/api/v1/reviews");
+
+
+        // Then: We assert that we get back a status code 400.
+        response.then()
+                .statusCode(400)
+                .log()
+                .body(true);
+
+        /* And: That the error message we get back at the rating property of the JSON response
+                is equal to string in errorMessage.
+         */
+        String errorMessage = "Rating is required.";
+        response.then()
+                .body("rating",equalTo(errorMessage));
     }
 }
