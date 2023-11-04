@@ -4,6 +4,7 @@ import com.jordi.booknook.models.BookEntity;
 import com.jordi.booknook.models.BookReviewEntity;
 import com.jordi.booknook.models.UserEntity;
 import com.jordi.booknook.payload.request.NewReviewRequest;
+import com.jordi.booknook.payload.request.UpdateReviewRequest;
 import com.jordi.booknook.repositories.BookRepository;
 import com.jordi.booknook.repositories.BookReviewRepository;
 import com.jordi.booknook.repositories.UserRepository;
@@ -27,7 +28,6 @@ import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.support.DefaultTransactionDefinition;
-import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.testcontainers.containers.MySQLContainer;
 
 import java.math.BigDecimal;
@@ -359,5 +359,110 @@ public class BookReviewControllerTestContainerTest {
         String errorMessage = "Rating is required.";
         response.then()
                 .body("rating",equalTo(errorMessage));
+    }
+
+    @Test
+    void updateReviewByIdShouldUpdateAndReturn (){
+        // Given: A valid request with a logged-in user to the PATCH /api/v1/reviews/{book_reviews_id} endpoint.
+        Map<String, String> headers = new HashMap<String, String>() {
+            {
+                put("Accept", "application/json");
+                put("Authorization", "Bearer " + token);
+            }
+        };
+
+        BigDecimal price = new BigDecimal("12.50");
+        LocalDateTime date = LocalDateTime.now();
+
+        BookEntity book = new BookEntity(
+                "Portada", "Nuevo libro test 2", "Un gran libro", price, date, date);
+
+        bookRepository.save(book);
+        Optional<UserEntity> user = userRepository.findById(1L);
+
+        BookReviewEntity review = new BookReviewEntity(book,user.get(),5,"Me encanta");
+
+        repository.save(review);
+
+        UpdateReviewRequest updateReviewRequest = new UpdateReviewRequest(2,"No esta mal");
+
+        // When: The PATCH request to update a review with and a valid body and a valid logged user is made.
+        Response response = given()
+                .headers(headers)
+                .contentType(ContentType.JSON)
+                .body(updateReviewRequest)
+                .when()
+                .patch("/api/v1/reviews/1");
+
+
+        // Then: We assert that we get back a status code 200.
+        response.then()
+                .statusCode(200)
+                .log()
+                .body(true);
+
+        /*
+           And: That the rating of the review we updated and got back as a JSON response
+                is the same as the rating of the review we send on the body.
+        */
+        response.then()
+                .body("rating",equalTo(updateReviewRequest.rating()));
+    }
+
+    @Test
+    void updateReviewByIdShouldReturnAccessDeniedErrorWhenTheUserCannotUpdate(){
+        // Given: A bad request with a logged-in user to the PATCH /api/v1/reviews/{book_reviews_id} endpoint.
+        Map<String, String> headers = new HashMap<String, String>() {
+            {
+                put("Accept", "application/json");
+                put("Authorization", "Bearer " + token);
+            }
+        };
+
+        BigDecimal price = new BigDecimal("12.50");
+        LocalDateTime date = LocalDateTime.now();
+
+        BookEntity book = new BookEntity(
+                "Portada", "Nuevo libro test 2", "Un gran libro", price, date, date);
+
+        bookRepository.save(book);
+
+        List<UserEntity> users = List.of(
+                new UserEntity("Usuario 2","usuario2@gmail.com","123456"),
+                new UserEntity("Usuario 3","usuario3@gmail.com","123456"),
+                new UserEntity("Usuario 4","usuario4@gmail.com","123456")
+        );
+        userRepository.saveAll(users);
+
+        Optional<UserEntity> user = userRepository.findById(2L);
+
+        BookReviewEntity review = new BookReviewEntity(book,user.get(),5,"Me encanta");
+
+        repository.save(review);
+
+        UpdateReviewRequest updateReviewRequest = new UpdateReviewRequest(2,"No esta mal");
+
+        // When: The PATCH request to update a review with and a valid body and a valid logged user that doesn't
+        // own the review we want to update is made.
+        Response response = given()
+                .headers(headers)
+                .contentType(ContentType.JSON)
+                .body(updateReviewRequest)
+                .when()
+                .patch("/api/v1/reviews/1");
+
+
+        // Then: We assert that we get back a status code 403.
+        response.then()
+                .statusCode(403)
+                .log()
+                .body(true);
+
+        /*
+           And: We assert that the response body as a string
+                contains the message error "Not allowed to update that Book review."
+        */
+        String responseBody = response.body().asString();
+        assertThat(responseBody,containsString("Not allowed to update that Book review."));
     }
 }
