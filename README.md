@@ -8,15 +8,17 @@
 
 ## Getting Started
 
-These instructions will get you a copy of the project up and running on your local machine for development and testing purposes.
+- These instructions will get you a copy of the project up and running on your local machine for development and testing purposes.
+- At the end is also what you will need to Dockerize the application and an initial MySQL DB.
 
+## Local
 ### Prerequisites
 
 ```
 - Java 17
 - MySQL 8
 - Maven
-- Docker (for testing purposes)
+- Docker (for testing purposes) now also for Dockerization.
 ```
 
 ### Installing
@@ -51,6 +53,39 @@ JWT_EXPIRE=
 You can also get a JSON representation via "http://localhost:8080/v3/api-docs".
 
 7 - Explore the different endpoints, register a user, log in and enjoy the app :)
+
+## Docker
+
+### Installing
+
+A step by step series of examples that tell you how to get a development env running
+
+1 - Git clone the repository
+
+```
+$ git clone https://github.com/jfontdev/book-nook-spring.git
+```
+
+2 - Create an environment file called **.env** on the root of the project and fill the next list of properties from your MySQL DB also the JWT secret you want to use and the expiry time of the token in seconds.
+```
+DB_HOST=
+DB_DATABASE=
+DB_USERNAME=
+DB_PASSWORD=
+JWT_SECRET=
+JWT_EXPIRE=
+```
+3 - Run ````docker compose up```` to start the process of dockerization of the DB and application:
+- This will create two containers with the same network.
+- I will also create the database "book_nook" (If you use another DB name in the **.env file**, you will have to change the mysql_scripts -> **init.sql** file with the new name of the DB.)
+- Get all the dependencies for the Spring app.
+- Run the app, the first time Spring will generate the tables in your DB according to the models.
+
+4 - Visit "http://localhost:8080/swagger-ui/index.html" to get a ui representation of the endpoints and schemas of our application.
+You can also get a JSON representation via "http://localhost:8080/v3/api-docs".
+
+5 - Explore the different endpoints, register a user, log in and enjoy the app :)
+
 
 ## Running the tests
 

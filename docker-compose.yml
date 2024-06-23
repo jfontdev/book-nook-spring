@@ -1,0 +1,42 @@
+version: "3.8"
+
+services:
+  mysqldb:
+    image: mysql:8.0.34
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      - MYSQL_ROOT_PASSWORD=$DB_PASSWORD
+      - MYSQL_DATABASE=$DB_DATABASE
+    ports:
+      - "3307:3306"
+    volumes:
+      - db:/var/lib/mysql
+      - "./mysql_scripts:/docker-entrypoint-initdb.d/"
+
+  app:
+    depends_on:
+      - mysqldb
+    build: .
+    restart: on-failure
+    env_file: .env
+    ports:
+      - "8081:8080"
+    environment:
+      SPRING_APPLICATION_JSON: '{
+        "spring.datasource.url"  : "jdbc:mysql://mysqldb:3306/$DB_DATABASE",
+        "spring.datasource.username" : "$DB_USERNAME",
+        "spring.datasource.password" : "$DB_PASSWORD",
+        "spring.datasource.driver-class-name" : "com.mysql.cj.jdbc.Driver",
+        "spring.jpa.properties.hibernate.dialect" : "org.hibernate.dialect.MySQL8Dialect",
+        "spring.jpa.hibernate.ddl-auto" : "update",
+        "jordi.app.jwtSecret": "$JWT_SECRET",
+        "jordi.app.jwtExpire": "$JWT_EXPIRE"
+      }'
+    volumes:
+      - .m2:/root/.m2
+    stdin_open: true
+    tty: true
+
+volumes:
+  db:
