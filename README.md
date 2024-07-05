@@ -77,7 +77,8 @@ JWT_EXPIRE=
 ```
 3 - Run ````docker compose up```` to start the process of dockerization of the DB and application:
 - This will create two containers with the same network.
-- I will also create the database "book_nook" (If you use another DB name in the **.env file**, you will have to change the mysql_scripts -> **init.sql** file with the new name of the DB.)
+- I will also create the database "book_nook" (If you use another DB name in the **.env file**, you will have to change the mysql_scripts -> **db_init.sql** file with the new name of the DB.)
+- It will create the table "books" and populate it with some data.
 - Get all the dependencies for the Spring app.
 - Run the app, the first time Spring will generate the tables in your DB according to the models.
 
