@@ -1,4 +1,4 @@
-package com.jordi.booknook;
+package com.jordi.booknook.serviceTests;
 
 import com.jordi.booknook.models.BookEntity;
 import com.jordi.booknook.models.ShelfEntity;
@@ -12,6 +12,7 @@ import com.jordi.booknook.payload.response.UpdateShelfResponse;
 import com.jordi.booknook.repositories.BookRepository;
 import com.jordi.booknook.repositories.ShelfRepository;
 import com.jordi.booknook.repositories.UserRepository;
+import com.jordi.booknook.security.CurrentUserResolver;
 import com.jordi.booknook.security.UserDetailsImplementation;
 import com.jordi.booknook.services.ShelfService;
 import jakarta.persistence.EntityNotFoundException;
@@ -53,6 +54,8 @@ public class ShelfServiceTest {
    @Mock
    BookRepository bookRepository;
    @Mock
+    CurrentUserResolver  currentUserResolver;
+   @Mock
    Authentication auth;
    @Mock
    UserDetailsImplementation userDetails;
@@ -81,16 +84,13 @@ public class ShelfServiceTest {
 
    @BeforeEach
     void setUp(){
-       this.service = new ShelfService(shelfRepository,userRepository,bookRepository);
+       this.service = new ShelfService(shelfRepository,userRepository,bookRepository, currentUserResolver);
    }
 
    @Test
    void addNewShelfShouldAddANewShelfAndShouldReturn() {
        // Given: A valid request with a new shelf and a logged user.
-       when(auth.getPrincipal())
-               .thenReturn(userDetails);
-       when(userDetails.getUsername())
-               .thenReturn(user1.getUsername());
+       when(currentUserResolver.requireCurrentUser()).thenReturn(user1);
        when(userRepository.findByUsername(user1.getUsername()))
                .thenReturn(Optional.of(user1));
 
@@ -140,10 +140,7 @@ public class ShelfServiceTest {
                false
        );
 
-       when(auth.getPrincipal())
-               .thenReturn(userDetails);
-       when(userDetails.getUsername())
-               .thenReturn(user1.getUsername());
+       when(currentUserResolver.requireCurrentUser()).thenReturn(user1);
 
        SecurityContextHolder.getContext().setAuthentication(auth);
 
@@ -186,10 +183,7 @@ public class ShelfServiceTest {
                false
        );
 
-       when(auth.getPrincipal())
-               .thenReturn(userDetails);
-       when(userDetails.getUsername())
-               .thenReturn(user1.getUsername());
+       when(currentUserResolver.requireCurrentUser()).thenReturn(user1);
 
        SecurityContextHolder.getContext().setAuthentication(auth);
 
@@ -215,10 +209,7 @@ public class ShelfServiceTest {
                null
        );
 
-       when(auth.getPrincipal())
-               .thenReturn(userDetails);
-       when(userDetails.getUsername())
-               .thenReturn(user1.getUsername());
+       when(currentUserResolver.requireCurrentUser()).thenReturn(user1);
 
        SecurityContextHolder.getContext().setAuthentication(auth);
 
@@ -277,10 +268,7 @@ public class ShelfServiceTest {
                 null
         );
 
-        when(auth.getPrincipal())
-                .thenReturn(userDetails);
-        when(userDetails.getUsername())
-                .thenReturn(user1.getUsername());
+        when(currentUserResolver.requireCurrentUser()).thenReturn(user1);
 
         SecurityContextHolder.getContext().setAuthentication(auth);
 
@@ -339,10 +327,7 @@ public class ShelfServiceTest {
                 null
         );
 
-        when(auth.getPrincipal())
-                .thenReturn(userDetails);
-        when(userDetails.getUsername())
-                .thenReturn(user1.getUsername());
+        when(currentUserResolver.requireCurrentUser()).thenReturn(user1);
 
         SecurityContextHolder.getContext().setAuthentication(auth);
 
@@ -401,10 +386,7 @@ public class ShelfServiceTest {
                 false
         );
 
-        when(auth.getPrincipal())
-                .thenReturn(userDetails);
-        when(userDetails.getUsername())
-                .thenReturn(user1.getUsername());
+        when(currentUserResolver.requireCurrentUser()).thenReturn(user1);
 
         SecurityContextHolder.getContext().setAuthentication(auth);
 
@@ -469,10 +451,7 @@ public class ShelfServiceTest {
         when(shelfRepository.findById(2L))
                 .thenReturn(Optional.of(shelf));
 
-        when(auth.getPrincipal())
-                .thenReturn(userDetails);
-        when(userDetails.getUsername())
-                .thenReturn(nonAllowedUser.getUsername());
+        when(currentUserResolver.requireCurrentUser()).thenReturn(nonAllowedUser);
 
         SecurityContextHolder.getContext().setAuthentication(auth);
 
@@ -495,10 +474,7 @@ public class ShelfServiceTest {
         // Given: A valid request with a valid shelf id, book id and a logged user that owns the shelf
         AddBookToShelfRequest request = new AddBookToShelfRequest(5L,2L);
 
-        when(auth.getPrincipal())
-                .thenReturn(userDetails);
-        when(userDetails.getUsername())
-                .thenReturn(user1.getUsername());
+        when(currentUserResolver.requireCurrentUser()).thenReturn(user1);
 
         SecurityContextHolder.getContext().setAuthentication(auth);
 
@@ -534,10 +510,7 @@ public class ShelfServiceTest {
         // Given: A bad request with a valid shelf with correct owner but an invalid book.
         AddBookToShelfRequest request = new AddBookToShelfRequest(1L,2L);
 
-        when(auth.getPrincipal())
-                .thenReturn(userDetails);
-        when(userDetails.getUsername())
-                .thenReturn(user1.getUsername());
+        when(currentUserResolver.requireCurrentUser()).thenReturn(user1);
 
         SecurityContextHolder.getContext().setAuthentication(auth);
 
@@ -561,10 +534,7 @@ public class ShelfServiceTest {
         // Given: A bad request with a valid book, an invalid shelf and a logged user.
         AddBookToShelfRequest request = new AddBookToShelfRequest(5L,1L);
 
-        when(auth.getPrincipal())
-                .thenReturn(userDetails);
-        when(userDetails.getUsername())
-                .thenReturn(user1.getUsername());
+        when(currentUserResolver.requireCurrentUser()).thenReturn(user1);
 
         SecurityContextHolder.getContext().setAuthentication(auth);
 
@@ -593,10 +563,7 @@ public class ShelfServiceTest {
         UserEntity nonAllowedUser = new UserEntity(
                 "Tamara", "tamara@gmail.com", "asdasda");
 
-        when(auth.getPrincipal())
-                .thenReturn(userDetails);
-        when(userDetails.getUsername())
-                .thenReturn(nonAllowedUser.getUsername());
+        when(currentUserResolver.requireCurrentUser()).thenReturn(nonAllowedUser);
 
         SecurityContextHolder.getContext().setAuthentication(auth);
 
@@ -640,10 +607,7 @@ public class ShelfServiceTest {
                 "Mi nueva estanteria 3",
                 true);
 
-        when(auth.getPrincipal())
-                .thenReturn(userDetails);
-        when(userDetails.getUsername())
-                .thenReturn(user1.getUsername());
+        when(currentUserResolver.requireCurrentUser()).thenReturn(user1);
         when(userRepository.findByUsername(user1.getUsername()))
                 .thenReturn(Optional.of(user1));
 
@@ -662,10 +626,7 @@ public class ShelfServiceTest {
     @Test
     void getOneUserShelfShouldReturn() {
        // Given: A valid request with a shelf id owned by the logged user.
-       when(auth.getPrincipal())
-               .thenReturn(userDetails);
-       when(userDetails.getUsername())
-               .thenReturn(user1.getUsername());
+        when(currentUserResolver.requireCurrentUser()).thenReturn(user1);
        when(userRepository.findByUsername(user1.getUsername()))
                .thenReturn(Optional.of(user1));
 
@@ -686,10 +647,7 @@ public class ShelfServiceTest {
        // Given: A bad request with an invalid shelf id and a logged user.
        Long nonValidShelfId = 1L;
 
-       when(auth.getPrincipal())
-               .thenReturn(userDetails);
-       when(userDetails.getUsername())
-               .thenReturn(user1.getUsername());
+        when(currentUserResolver.requireCurrentUser()).thenReturn(user1);
        when(userRepository.findByUsername(user1.getUsername()))
                .thenReturn(Optional.of(user1));
 
@@ -729,12 +687,7 @@ public class ShelfServiceTest {
                 "Mi nueva estanteria 3",
                 true);
 
-        when(auth.getPrincipal())
-                .thenReturn(userDetails);
-        when(userDetails.getUsername())
-                .thenReturn(user1.getUsername());
-        when(userRepository.findByUsername(user1.getUsername()))
-                .thenReturn(Optional.of(user1));
+        when(currentUserResolver.requireCurrentUser()).thenReturn(user1);
 
         SecurityContextHolder.getContext().setAuthentication(auth);
 

@@ -1,4 +1,4 @@
-package com.jordi.booknook;
+package com.jordi.booknook.serviceTests;
 
 import com.jordi.booknook.models.BookEntity;
 import com.jordi.booknook.models.UniversalSearch;

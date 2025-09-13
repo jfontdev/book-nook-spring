@@ -1,4 +1,4 @@
-package com.jordi.booknook;
+package com.jordi.booknook.serviceTests;
 
 import com.jordi.booknook.models.BookEntity;
 import com.jordi.booknook.models.BookReviewEntity;
@@ -10,6 +10,7 @@ import com.jordi.booknook.payload.response.UpdateReviewResponse;
 import com.jordi.booknook.repositories.BookRepository;
 import com.jordi.booknook.repositories.BookReviewRepository;
 import com.jordi.booknook.repositories.UserRepository;
+import com.jordi.booknook.security.CurrentUserResolver;
 import com.jordi.booknook.security.UserDetailsImplementation;
 import com.jordi.booknook.services.BookReviewService;
 import jakarta.persistence.EntityNotFoundException;
@@ -49,6 +50,8 @@ public class BookReviewServiceTest {
     @Mock
     UserRepository userRepository;
     @Mock
+    CurrentUserResolver currentUserResolver;
+    @Mock
     Authentication auth;
     @Mock
     UserDetailsImplementation userDetails;
@@ -71,7 +74,7 @@ public class BookReviewServiceTest {
 
     @BeforeEach
     void setUp(){
-        this.service = new BookReviewService(reviewRepository,bookRepository,userRepository);
+        this.service = new BookReviewService(reviewRepository,bookRepository,userRepository,currentUserResolver );
     }
 
     @Test
@@ -113,10 +116,7 @@ public class BookReviewServiceTest {
     @Test
     void getReviewsByUserShouldReturnTheCurrentUserReviews(){
         // Given: A logged user "jordi" with 2 assigned reviews.
-        when(auth.getPrincipal())
-                .thenReturn(userDetails);
-        when(userDetails.getUsername())
-                .thenReturn(user1.getUsername());
+        when(currentUserResolver.requireCurrentUser()).thenReturn(user1);
         when(userRepository.findByUsername(user1.getUsername()))
                 .thenReturn(Optional.of(user1));
 
@@ -142,10 +142,7 @@ public class BookReviewServiceTest {
 
         when(bookRepository.findById(book1.getBook_id())).thenReturn(Optional.of(book1));
 
-        when(auth.getPrincipal())
-                .thenReturn(userDetails);
-        when(userDetails.getUsername())
-                .thenReturn(user1.getUsername());
+        when(currentUserResolver.requireCurrentUser()).thenReturn(user1);
         when(userRepository.findByUsername(user1.getUsername()))
                 .thenReturn(Optional.of(user1));
 
@@ -178,10 +175,7 @@ public class BookReviewServiceTest {
 
         NewReviewRequest noBookReviewRequest = new NewReviewRequest(nonExistentId,4,"Great");
 
-        when(auth.getPrincipal())
-                .thenReturn(userDetails);
-        when(userDetails.getUsername())
-                .thenReturn(user1.getUsername());
+        when(currentUserResolver.requireCurrentUser()).thenReturn(user1);
         when(userRepository.findByUsername(user1.getUsername()))
                 .thenReturn(Optional.of(user1));
 
@@ -202,10 +196,7 @@ public class BookReviewServiceTest {
     @Test
     void updateReviewShouldUpdateTheReviewAndShouldReturn() {
         // Given: A request with a valid review that has both rating and review by the owner of that review.
-        when(auth.getPrincipal())
-                .thenReturn(userDetails);
-        when(userDetails.getUsername())
-                .thenReturn(user1.getUsername());
+        when(currentUserResolver.requireCurrentUser()).thenReturn(user1);
         when(userRepository.findByUsername(user1.getUsername()))
                 .thenReturn(Optional.of(user1));
 
@@ -244,10 +235,7 @@ public class BookReviewServiceTest {
 
         UpdateReviewRequest request = new UpdateReviewRequest(3, "No esta mal.");
 
-        when(auth.getPrincipal())
-                .thenReturn(userDetails);
-        when(userDetails.getUsername())
-                .thenReturn(user1.getUsername());
+        when(currentUserResolver.requireCurrentUser()).thenReturn(user1);
         when(userRepository.findByUsername(user1.getUsername()))
                 .thenReturn(Optional.of(user1));
 
@@ -276,11 +264,8 @@ public class BookReviewServiceTest {
         when(reviewRepository.findById(2L))
                 .thenReturn(Optional.of(review));
 
-        when(auth.getPrincipal())
-                .thenReturn(userDetails);
-        when(userDetails.getUsername())
-                .thenReturn(nonAllowedUser.getUsername());
-        when(userRepository.findByUsername(nonAllowedUser.getUsername()))
+        when(currentUserResolver.requireCurrentUser()).thenReturn(user1);
+        when(userRepository.findByUsername(user1.getUsername()))
                 .thenReturn(Optional.of(nonAllowedUser));
 
         SecurityContextHolder.getContext().setAuthentication(auth);
@@ -302,10 +287,7 @@ public class BookReviewServiceTest {
     @Test
     void updateReviewShouldUpdateTheReviewWithOnlyARatingAndShouldReturn() {
         // Given: A request with a valid review that has only a rating by the owner of that review.
-        when(auth.getPrincipal())
-                .thenReturn(userDetails);
-        when(userDetails.getUsername())
-                .thenReturn(user1.getUsername());
+        when(currentUserResolver.requireCurrentUser()).thenReturn(user1);
         when(userRepository.findByUsername(user1.getUsername()))
                 .thenReturn(Optional.of(user1));
 
@@ -352,10 +334,7 @@ public class BookReviewServiceTest {
     @Test
     void updateReviewShouldUpdateTheReviewWithOnlyAReviewTextAndShouldReturn() {
         // Given: A request with a valid review that has only a review text by the owner of that review.
-        when(auth.getPrincipal())
-                .thenReturn(userDetails);
-        when(userDetails.getUsername())
-                .thenReturn(user1.getUsername());
+        when(currentUserResolver.requireCurrentUser()).thenReturn(user1);
         when(userRepository.findByUsername(user1.getUsername()))
                 .thenReturn(Optional.of(user1));
 
