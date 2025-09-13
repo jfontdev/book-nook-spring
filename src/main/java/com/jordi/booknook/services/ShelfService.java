@@ -12,12 +12,9 @@ import com.jordi.booknook.payload.response.UpdateShelfResponse;
 import com.jordi.booknook.repositories.BookRepository;
 import com.jordi.booknook.repositories.ShelfRepository;
 import com.jordi.booknook.repositories.UserRepository;
-import com.jordi.booknook.security.UserDetailsImplementation;
+import com.jordi.booknook.security.CurrentUserResolver;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.security.access.AccessDeniedException;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.AuthenticationException;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -29,18 +26,19 @@ public class ShelfService {
     private final ShelfRepository shelfRepository;
     private final UserRepository userRepository;
     private final BookRepository bookRepository;
+    private final CurrentUserResolver currentUser;
 
-    public ShelfService(ShelfRepository shelfRepository, UserRepository userRepository, BookRepository bookRepository) {
+    public ShelfService(ShelfRepository shelfRepository, UserRepository userRepository, BookRepository bookRepository, CurrentUserResolver currentUserResolver) {
         this.shelfRepository = shelfRepository;
         this.userRepository = userRepository;
         this.bookRepository = bookRepository;
+        this.currentUser = currentUserResolver;
     }
 
     public NewShelfResponse addNewShelf(NewShelfRequest request) {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        UserDetailsImplementation userDetails = (UserDetailsImplementation) auth.getPrincipal();
+        UserEntity user = currentUser.requireCurrentUser();
 
-        Optional<UserEntity> authenticatedUser = userRepository.findByUsername(userDetails.getUsername());
+        Optional<UserEntity> authenticatedUser = userRepository.findByUsername(user.getUsername());
 
         ShelfEntity newShelf = shelfRepository.saveAndFlush(new ShelfEntity(authenticatedUser.orElseThrow(),
                 request.name(), request.image(), request.description(), request.public_shelf()));
@@ -51,10 +49,9 @@ public class ShelfService {
     }
 
     public UpdateShelfResponse updateShelfById(Long shelf_id, UpdateShelfRequest request){
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        UserDetailsImplementation userDetails = (UserDetailsImplementation) auth.getPrincipal();
+        UserEntity user = currentUser.requireCurrentUser();
 
-        String username = userDetails.getUsername();
+        String username = user.getUsername();
         Optional<ShelfEntity> shelf = shelfRepository.findById(shelf_id);
 
         if (shelf.isEmpty()) {
@@ -93,10 +90,9 @@ public class ShelfService {
     }
 
     public AddBookToShelfResponse addBookToShelf(AddBookToShelfRequest request){
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        UserDetailsImplementation userDetails = (UserDetailsImplementation) auth.getPrincipal();
+        UserEntity user = currentUser.requireCurrentUser();
 
-        String username = userDetails.getUsername();
+        String username = user.getUsername();
         Optional<BookEntity> bookToAdd = bookRepository.findById(request.book_id());
         Optional<ShelfEntity> shelf = shelfRepository.findById(request.shelf_id());
 
@@ -127,19 +123,17 @@ public class ShelfService {
     }
 
     public List<ShelfEntity> getAllUserShelves(){
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        UserDetailsImplementation userDetails = (UserDetailsImplementation) auth.getPrincipal();
+        UserEntity user = currentUser.requireCurrentUser();
 
-        Optional<UserEntity> authenticatedUser = userRepository.findByUsername(userDetails.getUsername());
+        Optional<UserEntity> authenticatedUser = userRepository.findByUsername(user.getUsername());
 
         return shelfRepository.findAllByUser(authenticatedUser.orElseThrow());
     }
 
     public ShelfEntity getOneUserShelf(Long shelves_id){
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        UserDetailsImplementation userDetails = (UserDetailsImplementation) auth.getPrincipal();
+        UserEntity user = currentUser.requireCurrentUser();
 
-        Optional<UserEntity> authenticatedUser = userRepository.findByUsername(userDetails.getUsername());
+        Optional<UserEntity> authenticatedUser = userRepository.findByUsername(user.getUsername());
         Optional<ShelfEntity> shelf = shelfRepository.findOneByUserAndShelfId(authenticatedUser.orElseThrow(),
                 shelves_id);
 
@@ -151,12 +145,9 @@ public class ShelfService {
     }
 
     public List<ShelfEntity> getAllUserPrivateShelves(){
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        UserDetailsImplementation userDetails = (UserDetailsImplementation) auth.getPrincipal();
+        UserEntity user = currentUser.requireCurrentUser();
 
-        Optional<UserEntity> authenticatedUser = userRepository.findByUsername(userDetails.getUsername());
-
-        return shelfRepository.findAllByUserAndPublicShelfIsFalse(authenticatedUser.orElseThrow());
+        return shelfRepository.findAllByUserAndPublicShelfIsFalse(user);
     }
 
     public List<ShelfEntity> getAllUserPublicShelves(Long user_id){
