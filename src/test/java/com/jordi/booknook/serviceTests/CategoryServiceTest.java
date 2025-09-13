@@ -1,9 +1,8 @@
-package com.jordi.booknook;
+package com.jordi.booknook.serviceTests;
 
 import com.jordi.booknook.models.CategoryEntity;
 import com.jordi.booknook.repositories.CategoryRepository;
 import com.jordi.booknook.services.CategoryService;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
